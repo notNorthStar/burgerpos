@@ -1,0 +1,124 @@
+# ============================================================
+# .NET / C# / Visual Studio
+# ============================================================
+[Bb]in/
+[Oo]bj/
+[Oo]ut/
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+build/
+bld/
+msbuild.log
+msbuild.err
+msbuild.wrn
+
+# User-specific files
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.userprefs
+*.dbmdl
+*.dbproj.schemaview
+*.jfm
+*.pfx
+*.publishsettings
+
+# Visual Studio / Rider
+.vs/
+.idea/
+*.swp
+*~
+
+# VS Code (mantenemos settings opcionales; ignoramos lo personal)
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# Restore / cache
+project.lock.json
+project.fragment.lock.json
+artifacts/
+*.nupkg
+**/packages/*
+!**/packages/build/
+
+# Test results
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+*.coverage
+*.coveragexml
+coverage*.json
+coverage*.xml
+coverage*.info
+TestResult.xml
+nunit-*.xml
+
+# Roslyn cache directories
+*.ide/
+*.cache
+
+# StyleCop
+StyleCopReport.xml
+
+# ============================================================
+# Bases de datos / migraciones / secretos
+# ============================================================
+*.mdf
+*.ldf
+*.ndf
+*.sqlite
+*.sqlite3
+*.db
+*.db-shm
+*.db-wal
+appsettings.*.local.json
+secrets.json
+*.env
+.env
+.env.*
+
+# ============================================================
+# Docker / despliegue
+# ============================================================
+.docker/
+docker-compose.override.yml
+
+# ============================================================
+# Vagrant
+# ============================================================
+.vagrant/
+*.box
+ubuntu-*.log
+
+# ============================================================
+# Diagramas (mantenemos fuente .drawio y export .png/.svg)
+# ============================================================
+*.drawio.bkp
+*.drawio~
+
+# ============================================================
+# Sistema operativo
+# ============================================================
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# ============================================================
+# Editores y temporales
+# ============================================================
+*.tmp
+*.bak
+*.log
+*.orig
+nul
