@@ -1,0 +1,81 @@
+@startuml P-03-comunicacion-tomar-orden
+' ======================================================================
+' BurgerPOS - P-03 Tomar orden
+' Diagrama de Comunicacion UML
+' RF asociado: RF-03    Caso de uso: CU-04
+' ======================================================================
+
+title P-03 - Tomar orden (Comunicacion UML)
+
+skinparam shadowing false
+skinparam rectangle {
+  BackgroundColor #F8F8F8
+  BorderColor #2E6FAC
+  FontSize 11
+}
+skinparam ArrowColor #555
+skinparam ArrowFontSize 10
+skinparam noteBackgroundColor #FFFEE0
+skinparam noteBorderColor #B8860B
+
+rectangle "Operador\n<<actor>>" as op #E8F4FD
+rectangle "TomarOrdenPage\n(Razor Page)\n<<UI>>" as page
+rectangle "OrdenService\n<<service>>" as svc
+rectangle "ProductoRepository\n<<repository>>" as prodRepo
+rectangle "OrdenRepository\n<<repository>>" as ordRepo
+rectangle "CocinaHubService\n(SignalR)\n<<hub>>" as hub
+rectangle "BitacoraService\n<<service>>" as bit
+rectangle "PostgreSQL\n<<database>>" as db #FFFEF0
+
+' Flujo principal
+op --> page : 1: navega a /TomarOrden
+page --> prodRepo : 2: ListarDisponibles
+prodRepo --> db : 3: SELECT Productos
+db --> prodRepo : 4: lista
+prodRepo --> page : 5: productos
+page --> op : 6: muestra menu
+op --> page : 7: selecciona modalidad
+page --> svc : 8: CrearOrden
+svc --> ordRepo : 9: CrearBorrador
+ordRepo --> db : 10: INSERT Orden
+db --> ordRepo : 11: ordenId
+op --> page : 12: agrega linea\n(producto, mods, nota)
+page --> svc : 13: AgregarLinea
+svc --> ordRepo : 14: InsertarLinea
+ordRepo --> db : 15: INSERT LineaOrden
+svc --> svc : 16: RecalcularSubtotal
+op --> page : 17: presiona\n"Enviar a cocina"
+page --> svc : 18: EnviarACocina
+svc --> prodRepo : 19: ValidarDisponibilidad
+prodRepo --> db : 20: SELECT disponibles
+svc --> ordRepo : 21: ActualizarEstado\n(EnviadaACocina)
+ordRepo --> db : 22: UPDATE Orden
+svc --> hub : 23: NotificarNuevaOrden
+hub --> hub : 24: broadcast\na cocina
+svc --> bit : 25: RegistrarEvento\n(OrdenEnviada)
+bit --> db : 26: INSERT Bitacora
+svc --> page : 27: OrdenEnviada
+page --> op : 28: confirmacion
+
+note right of svc
+  <b>Flujo alterno: producto no disponible</b>
+  ---
+  En el paso 19, si algun producto fue
+  marcado "no disponible" entre que se
+  agrego y se envia:
+  - retorna ProductosNoDisponibles(lista)
+  - page muestra alerta al operador
+  - el operador retira esos productos
+  - no se ejecutan los pasos 21 a 28
+end note
+
+note left of page
+  <b>Repeticion (paso 12 a 16)</b>
+  ---
+  Los pasos 12 a 16 se repiten por cada
+  producto que el operador agrega a la
+  orden, antes de presionar "Enviar a
+  cocina".
+end note
+
+@enduml

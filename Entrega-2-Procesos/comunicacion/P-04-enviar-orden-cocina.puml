@@ -1,0 +1,72 @@
+@startuml P-04-comunicacion-enviar-orden-cocina
+' ======================================================================
+' BurgerPOS - P-04 Enviar orden a cocina
+' Diagrama de Comunicacion UML
+' RF asociado: RF-03 -> RF-04    Caso de uso: CU-04
+' ======================================================================
+
+title P-04 - Enviar orden a cocina (Comunicacion UML)
+
+skinparam shadowing false
+skinparam rectangle {
+  BackgroundColor #F8F8F8
+  BorderColor #2E6FAC
+  FontSize 11
+}
+skinparam ArrowColor #555
+skinparam ArrowFontSize 10
+skinparam noteBackgroundColor #FFFEE0
+skinparam noteBorderColor #B8860B
+
+rectangle "Operador\n<<actor>>" as op #E8F4FD
+rectangle "TomarOrdenPage\n(Razor Page)\n<<UI>>" as page
+rectangle "OrdenService\n<<service>>" as svc
+rectangle "OrdenRepository\n<<repository>>" as ordRepo
+rectangle "ProductoRepository\n<<repository>>" as prodRepo
+rectangle "CocinaHubService\n(SignalR)\n<<hub>>" as hub
+rectangle "BitacoraService\n<<service>>" as bit
+rectangle "PostgreSQL\n<<database>>" as db #FFFEF0
+rectangle "CocinaPage\n(Razor Page)\n<<UI>>" as cocPage
+rectangle "Cocinero\n<<actor>>" as cook #E8F4FD
+
+' Flujo principal
+op --> page : 1: click "Enviar a cocina"
+page --> svc : 2: EnviarACocina(ordenId)
+svc --> ordRepo : 3: BuscarPorId
+ordRepo --> db : 4: SELECT Orden
+db --> ordRepo : 5: Orden
+ordRepo --> svc : 6: Orden completa
+svc --> svc : 7: ValidarTieneLineas
+svc --> prodRepo : 8: VerificarDisponibilidad
+prodRepo --> db : 9: SELECT Disponible
+db --> prodRepo : 10: estado
+prodRepo --> svc : 11: ok todos disponibles
+svc --> ordRepo : 12: ActualizarEstado\n(EnviadaACocina)
+ordRepo --> db : 13: UPDATE Orden\nestado y fecha envio
+svc --> hub : 14: BroadcastNuevaOrden
+hub --> cocPage : 15: push "orden-nueva"\n(WebSocket)
+cocPage --> cocPage : 16: actualiza\ncola FIFO
+cook --> cocPage : 17: visualiza nueva\norden en pantalla
+svc --> bit : 18: RegistrarEvento\n(OrdenEnviada)
+bit --> db : 19: INSERT Bitacora
+svc --> page : 20: OrdenEnviada
+page --> op : 21: confirmacion
+
+note right of svc
+  <b>Flujo alterno A: orden vacia</b>
+  ---
+  En el paso 7, si la orden no tiene
+  lineas: retorna ErrorOrdenVacia,
+  el operador ve el error y no se
+  ejecutan los pasos 8 a 21.
+
+  <b>Flujo alterno B: producto no disponible</b>
+  ---
+  En el paso 11, si algun producto se
+  marco no disponible entre tomar y enviar:
+  retorna ProductosNoDisponibles(lista),
+  el operador retira esos productos y
+  no se ejecutan los pasos 12 a 21.
+end note
+
+@enduml

@@ -1,0 +1,101 @@
+@startuml P-06-comunicacion-procesar-cobro
+' ======================================================================
+' BurgerPOS - P-06 Procesar cobro
+' Diagrama de Comunicacion UML
+' RF asociado: RF-05    Caso de uso: CU-07 (incluye CU-21)
+' ======================================================================
+
+title P-06 - Procesar cobro (Comunicacion UML)
+
+skinparam shadowing false
+skinparam rectangle {
+  BackgroundColor #F8F8F8
+  BorderColor #2E6FAC
+  FontSize 11
+}
+skinparam ArrowColor #555
+skinparam ArrowFontSize 10
+skinparam noteBackgroundColor #FFFEE0
+skinparam noteBorderColor #B8860B
+
+rectangle "Encargado de cobro\n<<actor>>" as cobro #E8F4FD
+rectangle "CobroPage\n(Razor Page)\n<<UI>>" as page
+rectangle "CobroService\n<<service>>" as svc
+rectangle "OrdenRepository\n<<repository>>" as ordRepo
+rectangle "CampaniaRepository\n<<repository>>" as campRepo
+rectangle "TurnoCajaRepository\n<<repository>>" as turnoRepo
+rectangle "VentaRepository\n<<repository>>" as vtaRepo
+rectangle "InventarioService\n<<service>>" as inv
+rectangle "TicketService\n<<service>>" as tkt
+rectangle "BitacoraService\n<<service>>" as bit
+rectangle "PostgreSQL\n<<database>>" as db #FFFEF0
+
+' Carga
+cobro --> page : 1: selecciona orden
+page --> ordRepo : 2: BuscarConLineas
+ordRepo --> db : 3: SELECT Orden + Lineas
+db --> ordRepo : 4: Orden
+page --> turnoRepo : 5: ObtenerTurnoAbierto
+turnoRepo --> db : 6: SELECT Turno abierto
+db --> turnoRepo : 7: Turno
+page --> cobro : 8: muestra resumen
+
+' Descuento opcional
+cobro --> page : 9: aplicar descuento
+page --> campRepo : 10: ListarVigentes
+campRepo --> db : 11: SELECT Campanias
+campRepo --> page : 12: vigentes
+cobro --> page : 13: selecciona campania
+page --> svc : 14: CalcularDescuento
+svc --> page : 15: montoDescuento
+
+' Pago
+cobro --> page : 16: captura propina,\nmetodo, monto recibido
+cobro --> page : 17: confirmar cobro
+page --> svc : 18: ProcesarCobro(dto)
+svc --> svc : 19: CalcularTotal\n(RN-06)
+svc --> svc : 20: ValidarMonto\no RegistrarComision
+
+' Persistencia transaccional
+svc --> vtaRepo : 21: AsignarFolioYGuardar
+vtaRepo --> db : 22: BEGIN TRANSACTION
+vtaRepo --> db : 23: SELECT MAX(folio)+1
+vtaRepo --> db : 24: INSERT Venta + Pago\n+ DescuentoAplicado
+vtaRepo --> db : 25: COMMIT
+db --> vtaRepo : 26: folio asignado
+
+' Efectos colaterales
+svc --> inv : 27: DescontarPorVenta
+inv --> db : 28: UPDATE Insumos
+svc --> tkt : 29: GenerarTicketDigital
+tkt --> db : 30: INSERT Ticket
+svc --> ordRepo : 31: ActualizarEstado\n(Cobrada)
+ordRepo --> db : 32: UPDATE Orden
+svc --> bit : 33: RegistrarEvento(Venta)
+bit --> db : 34: INSERT Bitacora
+svc --> page : 35: VentaCompletada
+page --> cobro : 36: muestra ticket\ny cambio si aplica
+
+note right of svc
+  <b>Calculo en paso 19 (RN-06)</b>
+  ---
+  1. Subtotal = suma de lineas
+  2. - descuento aplicado
+  3. = base gravable
+  4. + IVA 16%
+  5. + propina
+  6. = total a pagar
+  Comision bancaria se registra
+  aparte, no se cobra al cliente.
+end note
+
+note left of vtaRepo
+  <b>Folio consecutivo (RN-02)</b>
+  ---
+  Asignacion en transaccion atomica
+  para garantizar consecutivo sin
+  saltos y sin duplicados aunque
+  haya cobros concurrentes.
+end note
+
+@enduml

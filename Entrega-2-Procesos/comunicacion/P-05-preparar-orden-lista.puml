@@ -1,0 +1,74 @@
+@startuml P-05-comunicacion-preparar-orden-lista
+' ======================================================================
+' BurgerPOS - P-05 Preparar y marcar orden lista
+' Diagrama de Comunicacion UML
+' RF asociado: RF-04    Casos de uso: CU-05 y CU-06
+' ======================================================================
+
+title P-05 - Preparar y marcar orden lista (Comunicacion UML)
+
+skinparam shadowing false
+skinparam rectangle {
+  BackgroundColor #F8F8F8
+  BorderColor #2E6FAC
+  FontSize 11
+}
+skinparam ArrowColor #555
+skinparam ArrowFontSize 10
+skinparam noteBackgroundColor #FFFEE0
+skinparam noteBorderColor #B8860B
+
+rectangle "Cocinero\n<<actor>>" as cook #E8F4FD
+rectangle "CocinaPage\n(Razor Page)\n<<UI>>" as cocPage
+rectangle "OrdenService\n<<service>>" as svc
+rectangle "OrdenRepository\n<<repository>>" as ordRepo
+rectangle "MeserosHubService\n(SignalR)\n<<hub>>" as hub
+rectangle "BitacoraService\n<<service>>" as bit
+rectangle "PostgreSQL\n<<database>>" as db #FFFEF0
+rectangle "MeserosPage\n(Razor Page)\n<<UI>>" as mesPage
+rectangle "Mesero\n<<actor>>" as wait #E8F4FD
+
+' Flujo de cocinero (marcar lista)
+cook --> cocPage : 1: abre /Cocina
+cocPage --> ordRepo : 2: ListarPorEstado\n(EnviadaACocina)
+ordRepo --> db : 3: SELECT cola FIFO
+db --> ordRepo : 4: ordenes
+ordRepo --> cocPage : 5: lista
+cocPage --> cook : 6: muestra cola
+cook --> cocPage : 7: click "Marcar lista"
+cocPage --> svc : 8: MarcarLista(ordenId)
+svc --> ordRepo : 9: ActualizarEstado(Lista)
+ordRepo --> db : 10: UPDATE Orden
+svc --> hub : 11: NotificarOrdenLista
+hub --> mesPage : 12: push "orden-lista"\n(WebSocket)
+mesPage --> wait : 13: indicador visual\n+ sonido
+svc --> bit : 14: RegistrarEvento\n(OrdenLista)
+bit --> db : 15: INSERT Bitacora
+svc --> cocPage : 16: ok
+cocPage --> cook : 17: confirmacion
+
+' Flujo de mesero (marcar entregada)
+wait --> mesPage : 18: recoge y click\n"Marcar entregada"
+mesPage --> svc : 19: MarcarEntregada(ordenId)
+svc --> ordRepo : 20: ActualizarEstado\n(Entregada)
+ordRepo --> db : 21: UPDATE Orden
+svc --> bit : 22: RegistrarEvento\n(OrdenEntregada)
+bit --> db : 23: INSERT Bitacora
+svc --> mesPage : 24: ok
+mesPage --> wait : 25: confirmacion
+
+note right of svc
+  <b>Continuidad del proceso</b>
+  ---
+  Este diagrama cubre dos transiciones
+  de estado consecutivas:
+  - EnviadaACocina -> Lista (pasos 1-17)
+  - Lista -> Entregada (pasos 18-25)
+
+  Cada transicion la dispara un actor
+  distinto (cocinero, luego mesero).
+  Ambas terminan con notificacion
+  y registro en bitacora.
+end note
+
+@enduml

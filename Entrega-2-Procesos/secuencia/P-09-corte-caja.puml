@@ -1,0 +1,110 @@
+@startuml P-09-secuencia-corte-caja
+' ======================================================================
+' BurgerPOS - P-09 Realizar corte de caja
+' Diagrama de Secuencia UML
+' RF asociado: RF-09    Casos de uso: CU-14 + CU-15
+' ======================================================================
+
+title P-09 - Realizar corte de caja (Secuencia UML)
+
+skinparam shadowing false
+skinparam sequence {
+  ArrowColor #555
+  ActorBackgroundColor #E8F4FD
+  ActorBorderColor #2E6FAC
+  ParticipantBackgroundColor #F8F8F8
+  ParticipantBorderColor #2E6FAC
+  DatabaseBackgroundColor #FFFEF0
+  DatabaseBorderColor #B8860B
+  LifeLineBorderColor #999
+}
+
+actor "Encargado de cobro" as Op
+participant "TurnoCajaPage\n(Razor Page)" as Page
+participant "TurnoCajaService" as Svc
+participant "TurnoCajaRepository" as TurnoRepo
+participant "VentaRepository" as VtaRepo
+participant "BitacoraService" as Bit
+database "PostgreSQL" as DB
+
+== Carga del turno abierto ==
+
+Op -> Page: navega a\n/TurnoCaja/Cerrar
+activate Page
+Page -> TurnoRepo: ObtenerTurnoAbierto(operadorId)
+activate TurnoRepo
+TurnoRepo -> DB: SELECT TurnoCaja\nWHERE Estado = 'Abierto'\nAND OperadorAperturaId = @id
+DB --> TurnoRepo: Turno o null
+TurnoRepo --> Page: Turno
+deactivate TurnoRepo
+
+alt no hay turno abierto
+    Page --> Op: mensaje "no hay turno"
+else hay turno
+
+    == Calculo de efectivo esperado ==
+
+    Page -> Svc: PrepararArqueo(turnoId)
+    activate Svc
+    Svc -> VtaRepo: SumarVentasEnEfectivo\n(turnoId)
+    activate VtaRepo
+    VtaRepo -> DB: SELECT SUM(total)\nFROM Ventas\nWHERE TurnoCajaId = @id\nAND MetodoPago = 'Efectivo'
+    DB --> VtaRepo: totalEfectivoVentas
+    VtaRepo --> Svc: totalEfectivoVentas
+    deactivate VtaRepo
+
+    Svc -> TurnoRepo: ObtenerRetiros(turnoId)
+    activate TurnoRepo
+    TurnoRepo -> DB: SELECT SUM(monto)\nFROM Retiros
+    DB --> TurnoRepo: totalRetiros
+    TurnoRepo --> Svc: totalRetiros
+    deactivate TurnoRepo
+
+    Svc -> Svc: efectivoEsperado =\nfondoInicial +\ntotalEfectivoVentas -\ntotalRetiros
+
+    Svc --> Page: ResumenArqueo\n(esperado, indicadores)
+    deactivate Svc
+    Page --> Op: muestra resumen
+    deactivate Page
+
+    == Captura del contado y arqueo ==
+
+    Op -> Page: captura monto contado\ny observaciones
+    Op -> Page: presiona "Arquear"
+    activate Page
+    Page -> Svc: Arquear(turnoId, contado,\nobservaciones)
+    activate Svc
+
+    Svc -> Svc: diferencia =\ncontado - efectivoEsperado
+
+    alt |diferencia| > umbral
+        Svc --> Page: RequiereMotivo
+        deactivate Svc
+        Page --> Op: solicita motivo
+        deactivate Page
+        Op -> Page: captura motivo
+        activate Page
+        Page -> Svc: ArquearConMotivo\n(turnoId, contado,\nmotivo)
+        activate Svc
+    end
+
+    == Cierre del turno ==
+
+    Op -> Page: confirma cierre
+    Svc -> TurnoRepo: CerrarTurno(turno,\nesperado, contado,\ndiferencia, motivo)
+    activate TurnoRepo
+    TurnoRepo -> DB: BEGIN TRANSACTION\nUPDATE TurnoCaja\nSET Estado = 'Cerrado',\nFechaCierre = NOW(),\n... arqueo completo\nCOMMIT
+    DB --> TurnoRepo: ok
+    TurnoRepo --> Svc: TurnoCerrado
+    deactivate TurnoRepo
+
+    Svc -> Bit: RegistrarEvento\n(CierreTurno, operador, diferencia)
+    Bit -> DB: INSERT Bitacora
+
+    Svc --> Page: ReporteCierre
+    deactivate Svc
+    Page --> Op: muestra reporte\ny opcion exportar
+    deactivate Page
+end
+
+@enduml

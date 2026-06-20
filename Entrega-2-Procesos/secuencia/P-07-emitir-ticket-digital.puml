@@ -1,0 +1,91 @@
+@startuml P-07-secuencia-emitir-ticket-digital
+' ======================================================================
+' BurgerPOS - P-07 Generar y emitir ticket digital
+' Diagrama de Secuencia UML
+' RF asociado: RF-06    Caso de uso: CU-08
+' ======================================================================
+
+title P-07 - Generar y emitir ticket digital (Secuencia UML)
+
+skinparam shadowing false
+skinparam sequence {
+  ArrowColor #555
+  ActorBackgroundColor #E8F4FD
+  ActorBorderColor #2E6FAC
+  ParticipantBackgroundColor #F8F8F8
+  ParticipantBorderColor #2E6FAC
+  DatabaseBackgroundColor #FFFEF0
+  DatabaseBorderColor #B8860B
+  LifeLineBorderColor #999
+}
+
+participant "CobroService" as Cobro
+participant "TicketService" as Svc
+participant "VentaRepository" as VtaRepo
+participant "EstablecimientoRepository" as EstRepo
+participant "TicketRepository" as TktRepo
+participant "BitacoraService" as Bit
+database "PostgreSQL" as DB
+actor "Encargado de cobro" as Op
+participant "TicketPage\n(Razor Page)" as Page
+participant "PdfRenderer" as Pdf
+
+== Generacion automatica al cobrar ==
+
+Cobro -> Svc: GenerarTicketDigital(venta)
+activate Svc
+
+Svc -> VtaRepo: ObtenerVentaConDetalle(ventaId)
+activate VtaRepo
+VtaRepo -> DB: SELECT Venta\nWITH Lineas, Pago,\nDescuentoAplicado
+DB --> VtaRepo: Venta completa
+VtaRepo --> Svc: Venta
+deactivate VtaRepo
+
+Svc -> EstRepo: ObtenerDatosVigentes()
+activate EstRepo
+EstRepo -> DB: SELECT DatosEstablecimiento
+DB --> EstRepo: datos
+EstRepo --> Svc: DatosEstablecimiento
+deactivate EstRepo
+
+Svc -> Svc: ComponerContenidoTicket\n(venta, establecimiento)\nincluye precios historicos
+
+Svc -> TktRepo: GuardarSnapshot(ticket)
+activate TktRepo
+TktRepo -> DB: INSERT Ticket\nContenidoSnapshot
+DB --> TktRepo: ticketId
+TktRepo --> Svc: Ticket
+deactivate TktRepo
+
+Svc -> Bit: RegistrarEvento\n(TicketEmitido, venta.folio)
+Bit -> DB: INSERT Bitacora
+
+Svc --> Cobro: Ticket
+deactivate Svc
+
+== Visualizacion (interactivo) ==
+
+Op -> Page: navega a /Ticket/{id}
+activate Page
+Page -> TktRepo: ObtenerPorId(ticketId)
+activate TktRepo
+TktRepo -> DB: SELECT Ticket
+DB --> TktRepo: Ticket
+TktRepo --> Page: Ticket
+deactivate TktRepo
+Page --> Op: muestra ticket\nen pantalla
+deactivate Page
+
+== (Opcional) Exportar como PDF ==
+
+Op -> Page: click "Exportar PDF"
+activate Page
+Page -> Pdf: Renderizar(ticket.contenido)
+activate Pdf
+Pdf --> Page: bytes PDF
+deactivate Pdf
+Page --> Op: descarga PDF
+deactivate Page
+
+@enduml

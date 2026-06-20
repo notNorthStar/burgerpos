@@ -1,0 +1,64 @@
+@startuml P-07-bpmn-emitir-ticket-digital
+' ======================================================================
+' BurgerPOS - P-07 Generar y emitir ticket digital
+' Diagrama BPMN2 (Activity Diagram con Swim Lanes)
+' RF asociado: RF-06    Caso de uso: CU-08
+' ======================================================================
+
+title P-07 - Generar y emitir ticket digital (BPMN2)
+
+skinparam shadowing false
+skinparam activity {
+  BackgroundColor #F8F8F8
+  BorderColor #2E6FAC
+  DiamondBackgroundColor #FFFEF0
+  DiamondBorderColor #B8860B
+  ArrowColor #555
+}
+skinparam swimlane {
+  BorderColor #555
+  TitleBackgroundColor #E8F4FD
+  TitleFontStyle bold
+}
+skinparam noteBackgroundColor #FFFEE0
+skinparam noteBorderColor #B8860B
+
+|#E8F4FD|Sistema BurgerPOS|
+start
+:Recibe disparo de\nemision de ticket\n(desde P-06 al confirmar venta);
+
+:Lee datos historicos\nde la venta (precios,\nmodificadores, totales);
+:Lee datos del\nestablecimiento\nvigentes al momento\n(RN-05);
+
+:Compone ticket digital:\n- Cabecera (nombre, direccion,\n  telefono, RFC opcional)\n- Folio consecutivo\n- Fecha y hora\n- Modalidad y mesa\n- Lineas con precios historicos\n- Modificadores\n- Subtotal\n- Descuento (si aplica)\n- IVA 16 por ciento\n- Propina (si aplica)\n- Total\n- Metodo de pago\n- Operador;
+
+:Persiste snapshot\ndel ticket en BD\n(inmutable);
+
+|#FAFAFA|Encargado de cobro|
+:Visualiza ticket\nen pantalla;
+
+if (Cliente solicita copia\no respaldo digital?) then (si)
+  :Solicita exportar;
+
+  |Sistema BurgerPOS|
+  if (Formato?) then (PDF)
+    :Genera archivo PDF;
+  else (HTML)
+    :Genera archivo HTML;
+  endif
+
+  :Entrega archivo\nal navegador;
+
+  |Encargado de cobro|
+  :Descarga / comparte\ncon el cliente;
+else (no)
+endif
+
+|Sistema BurgerPOS|
+:Registra evento\nen bitacora\n(TicketEmitido);
+
+|Encargado de cobro|
+:Cierra vista\ndel ticket;
+stop
+
+@enduml

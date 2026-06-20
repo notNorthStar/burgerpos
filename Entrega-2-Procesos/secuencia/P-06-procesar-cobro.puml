@@ -1,0 +1,131 @@
+@startuml P-06-secuencia-procesar-cobro
+' ======================================================================
+' BurgerPOS - P-06 Procesar cobro
+' Diagrama de Secuencia UML
+' RF asociado: RF-05    Caso de uso: CU-07 (incluye CU-21)
+' ======================================================================
+
+title P-06 - Procesar cobro (Secuencia UML)
+
+skinparam shadowing false
+skinparam sequence {
+  ArrowColor #555
+  ActorBackgroundColor #E8F4FD
+  ActorBorderColor #2E6FAC
+  ParticipantBackgroundColor #F8F8F8
+  ParticipantBorderColor #2E6FAC
+  DatabaseBackgroundColor #FFFEF0
+  DatabaseBorderColor #B8860B
+  LifeLineBorderColor #999
+}
+
+actor "Encargado de cobro" as Cobro
+participant "CobroPage\n(Razor Page)" as Page
+participant "CobroService" as Svc
+participant "OrdenRepository" as OrdRepo
+participant "CampaniaRepository" as CampRepo
+participant "TurnoCajaRepository" as TurnoRepo
+participant "VentaRepository" as VtaRepo
+participant "InventarioService" as Inv
+participant "TicketService" as Tkt
+participant "BitacoraService" as Bit
+database "PostgreSQL" as DB
+
+== Carga de orden a cobrar ==
+
+Cobro -> Page: selecciona orden
+activate Page
+Page -> OrdRepo: BuscarConLineas(ordenId)
+activate OrdRepo
+OrdRepo -> DB: SELECT Orden\nWITH Lineas, Modificadores
+DB --> OrdRepo: Orden completa
+OrdRepo --> Page: Orden
+deactivate OrdRepo
+
+Page -> TurnoRepo: ObtenerTurnoAbierto()
+activate TurnoRepo
+TurnoRepo -> DB: SELECT TurnoCaja\nWHERE Estado = 'Abierto'
+DB --> TurnoRepo: Turno o null
+TurnoRepo --> Page: Turno
+deactivate TurnoRepo
+
+alt no hay turno abierto
+    Page --> Cobro: redirige a abrir turno (P-09)
+else turno abierto
+
+    Page --> Cobro: muestra resumen\ny opciones de cobro
+    deactivate Page
+
+    == (Opcional) Aplicar descuento ==
+
+    Cobro -> Page: click "Aplicar descuento"
+    activate Page
+    Page -> CampRepo: ListarVigentes(ahora, orden)
+    activate CampRepo
+    CampRepo -> DB: SELECT Campanias\nactivas y vigentes
+    DB --> CampRepo: lista
+    CampRepo --> Page: campanias vigentes
+    deactivate CampRepo
+    Page --> Cobro: muestra opciones
+    Cobro -> Page: selecciona campania
+    Page -> Svc: CalcularDescuento\n(campaniaId, orden)
+    activate Svc
+    Svc --> Page: montoDescuento
+    deactivate Svc
+    Page --> Cobro: muestra subtotal\ncon descuento
+    deactivate Page
+
+    == Datos del pago ==
+
+    Cobro -> Page: captura propina (opcional)\ny metodo de pago
+    activate Page
+    Cobro -> Page: si efectivo, captura\nmonto recibido
+
+    == Calculo y confirmacion ==
+
+    Cobro -> Page: click "Confirmar cobro"
+    Page -> Svc: ProcesarCobro(dto)
+    activate Svc
+
+    Svc -> Svc: CalcularTotal\n(subtotal, descuento,\nIVA 16%, propina)
+
+    alt efectivo
+        Svc -> Svc: ValidarMontoRecibido\n>= total
+        Svc -> Svc: CalcularCambio\n(recibido - total)
+    else tarjeta
+        Svc -> Svc: RegistrarComisionBancaria
+    end
+
+    Svc -> VtaRepo: AsignarFolioYGuardar\n(venta, pago, descuento, turno)
+    activate VtaRepo
+    VtaRepo -> DB: BEGIN TRANSACTION\nSELECT MAX(folio)+1\nINSERT Venta\nINSERT Pago\nINSERT DescuentoAplicado\nCOMMIT
+    DB --> VtaRepo: folio asignado
+    VtaRepo --> Svc: Venta con folio
+    deactivate VtaRepo
+
+    Svc -> Inv: DescontarPorVenta(venta)
+    activate Inv
+    Inv -> DB: UPDATE Insumos\nSET Saldo -= consumo
+    DB --> Inv: ok
+    Inv --> Svc: ok
+    deactivate Inv
+
+    Svc -> Tkt: GenerarTicketDigital(venta)
+    activate Tkt
+    Tkt -> DB: INSERT Ticket
+    Tkt --> Svc: Ticket
+    deactivate Tkt
+
+    Svc -> OrdRepo: ActualizarEstado(Cobrada)
+    OrdRepo -> DB: UPDATE Ordenes
+
+    Svc -> Bit: RegistrarEvento\n(Venta, cobrador, folio)
+    Bit -> DB: INSERT Bitacora
+
+    Svc --> Page: VentaCompletada(ticket, cambio?)
+    deactivate Svc
+    Page --> Cobro: muestra ticket digital\ny cambio si aplica
+    deactivate Page
+end
+
+@enduml

@@ -1,0 +1,71 @@
+@startuml P-09-bpmn-corte-caja
+' ======================================================================
+' BurgerPOS - P-09 Realizar corte de caja
+' Diagrama BPMN2 (Activity Diagram con Swim Lanes)
+' RF asociado: RF-09    Casos de uso: CU-14 (apertura) + CU-15 (cierre)
+' ======================================================================
+
+title P-09 - Realizar corte de caja (BPMN2)
+
+skinparam shadowing false
+skinparam activity {
+  BackgroundColor #F8F8F8
+  BorderColor #2E6FAC
+  DiamondBackgroundColor #FFFEF0
+  DiamondBorderColor #B8860B
+  ArrowColor #555
+}
+skinparam swimlane {
+  BorderColor #555
+  TitleBackgroundColor #E8F4FD
+  TitleFontStyle bold
+}
+skinparam noteBackgroundColor #FFFEE0
+skinparam noteBorderColor #B8860B
+
+|#FAFAFA|Encargado de cobro|
+start
+:Entra a "Turno de caja"\n> "Cerrar turno";
+
+|#E8F4FD|Sistema BurgerPOS|
+:Carga el turno abierto\ndel operador;
+
+if (Existe turno\nabierto?) then (no)
+  :Muestra mensaje:\n"No hay turno abierto";
+  stop
+else (si)
+endif
+
+:Calcula efectivo esperado:\nfondo inicial\n+ ventas en efectivo del turno\n- retiros registrados;
+:Carga indicadores del turno\n(ventas, propinas, descuentos);
+
+|Encargado de cobro|
+:Cuenta fisicamente el\nefectivo en caja;
+:Captura monto contado;
+:(Opcional) captura\nobservaciones;
+:Presiona "Arquear";
+
+|Sistema BurgerPOS|
+:Calcula diferencia:\ncontado - esperado;
+:Muestra reporte de arqueo;
+
+if (Diferencia absoluta\n> umbral configurable?) then (si)
+  :Solicita motivo\nobligatorio;
+  |Encargado de cobro|
+  :Captura motivo;
+  |Sistema BurgerPOS|
+endif
+
+|Encargado de cobro|
+:Revisa reporte\ny confirma cierre;
+
+|Sistema BurgerPOS|
+:Cambia estado del turno\na Cerrado;
+:Persiste arqueo\n(esperado, contado,\ndiferencia, motivo);
+:Registra evento\nen bitacora\n(CierreTurno);
+
+|Encargado de cobro|
+:Recibe reporte de cierre\ny puede exportarlo;
+stop
+
+@enduml

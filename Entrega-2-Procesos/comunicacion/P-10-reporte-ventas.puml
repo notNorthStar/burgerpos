@@ -1,0 +1,84 @@
+@startuml P-10-comunicacion-reporte-ventas
+' ======================================================================
+' BurgerPOS - P-10 Generar reporte de ventas
+' Diagrama de Comunicacion UML
+' RF asociado: RF-08    Caso de uso: CU-13
+' ======================================================================
+
+title P-10 - Generar reporte de ventas (Comunicacion UML)
+
+skinparam shadowing false
+skinparam rectangle {
+  BackgroundColor #F8F8F8
+  BorderColor #2E6FAC
+  FontSize 11
+}
+skinparam ArrowColor #555
+skinparam ArrowFontSize 10
+skinparam noteBackgroundColor #FFFEE0
+skinparam noteBorderColor #B8860B
+
+rectangle "Administrador\n<<actor>>" as admin #E8F4FD
+rectangle "ReportesPage\n(Razor Page)\n<<UI>>" as page
+rectangle "ReporteService\n<<service>>" as svc
+rectangle "VentaRepository\n<<repository>>" as vtaRepo
+rectangle "BitacoraService\n<<service>>" as bit
+rectangle "PostgreSQL\n<<database>>" as db #FFFEF0
+rectangle "PdfRenderer\n<<library>>" as pdf
+
+' Carga del formulario
+admin --> page : 1: navega a\n/Reportes/Ventas
+page --> admin : 2: muestra filtros
+
+' Generar reporte
+admin --> page : 3: selecciona rango\ny filtros
+admin --> page : 4: click Generar
+page --> svc : 5: GenerarReporte(filtros)
+svc --> svc : 6: ValidarRango
+svc --> vtaRepo : 7: ConsultarVentas\nNoAnuladas
+vtaRepo --> db : 8: SELECT Ventas\n+ Lineas + Pagos
+db --> vtaRepo : 9: dataset
+vtaRepo --> svc : 10: List<Venta>
+svc --> svc : 11: CalcularIndicadores
+svc --> svc : 12: DesglosarPorMetodoPago
+svc --> bit : 13: RegistrarEvento\n(ConsultaReporte)
+bit --> db : 14: INSERT Bitacora
+svc --> page : 15: ReporteVentas
+page --> admin : 16: muestra tablas\ny graficos
+
+' Exportar (opcional)
+admin --> page : 17: click Exportar PDF
+page --> pdf : 18: Renderizar(reporte)
+pdf --> page : 19: bytes PDF
+page --> admin : 20: descarga PDF
+
+note right of svc
+  <b>Indicadores calculados (paso 11)</b>
+  ---
+  - Total bruto
+  - Numero de transacciones
+  - Productos top (cantidad e ingreso)
+  - Ingreso promedio por venta
+  - Total de propinas
+  - Total descontado por campania
+  - IVA recaudado
+  - Comisiones bancarias acumuladas
+  - Ganancia bruta = total - comisiones
+  - Ganancia neta = bruta - IVA
+
+  El paso 12 desglosa todos los
+  anteriores por metodo de pago
+  (efectivo vs tarjeta).
+end note
+
+note left of vtaRepo
+  <b>Ventas anuladas excluidas</b>
+  ---
+  El paso 7 filtra Anulada = false
+  para que el reporte refleje solo
+  ventas validas. Las anuladas
+  quedan visibles en bitacora (RF-12)
+  pero no en metricas de negocio.
+end note
+
+@enduml

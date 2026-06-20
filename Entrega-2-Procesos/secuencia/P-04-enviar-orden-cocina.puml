@@ -1,0 +1,102 @@
+@startuml P-04-secuencia-enviar-orden-cocina
+' ======================================================================
+' BurgerPOS - P-04 Enviar orden a cocina
+' Diagrama de Secuencia UML
+' RF asociado: RF-03 -> RF-04    Caso de uso: CU-04
+' ======================================================================
+
+title P-04 - Enviar orden a cocina (Secuencia UML)
+
+skinparam shadowing false
+skinparam sequence {
+  ArrowColor #555
+  ActorBackgroundColor #E8F4FD
+  ActorBorderColor #2E6FAC
+  ParticipantBackgroundColor #F8F8F8
+  ParticipantBorderColor #2E6FAC
+  DatabaseBackgroundColor #FFFEF0
+  DatabaseBorderColor #B8860B
+  LifeLineBorderColor #999
+}
+
+actor "Operador" as Op
+participant "TomarOrdenPage\n(Razor Page)" as Page
+participant "OrdenService" as Svc
+participant "OrdenRepository" as OrdRepo
+participant "ProductoRepository" as ProdRepo
+participant "CocinaHubService\n(SignalR)" as Hub
+participant "BitacoraService" as Bit
+database "PostgreSQL" as DB
+actor "Cocinero" as Cook
+participant "CocinaPage\n(Razor Page)" as CocPage
+
+== Disparo del envio ==
+
+Op -> Page: click "Enviar a cocina"
+activate Page
+Page -> Svc: EnviarACocina(ordenId)
+activate Svc
+
+== Validaciones ==
+
+Svc -> OrdRepo: BuscarPorId(ordenId)
+activate OrdRepo
+OrdRepo -> DB: SELECT Orden\nWITH LineasOrden
+DB --> OrdRepo: Orden completa
+OrdRepo --> Svc: Orden
+deactivate OrdRepo
+
+Svc -> Svc: ValidarTieneLineas(orden)
+
+alt orden sin lineas
+    Svc --> Page: ErrorOrdenVacia
+    Page --> Op: muestra error
+else orden con lineas
+    Svc -> ProdRepo: VerificarDisponibilidad\n(lineas.productosIds)
+    activate ProdRepo
+    ProdRepo -> DB: SELECT Disponible\nFROM Productos
+    DB --> ProdRepo: estado
+    ProdRepo --> Svc: lista no disponibles
+    deactivate ProdRepo
+
+    alt hay no disponibles
+        Svc --> Page: ProductosNoDisponibles(lista)
+        Page --> Op: muestra alerta
+    else todos disponibles
+
+        == Cambio de estado y notificacion ==
+
+        Svc -> OrdRepo: ActualizarEstado\n(ordenId, EnviadaACocina)
+        activate OrdRepo
+        OrdRepo -> DB: UPDATE Ordenes\nSET Estado = 'EnviadaACocina',\nFechaEnvio = NOW()
+        DB --> OrdRepo: ok
+        OrdRepo --> Svc: ok
+        deactivate OrdRepo
+
+        Svc -> Hub: BroadcastNuevaOrden(orden)
+        activate Hub
+        Hub -> CocPage: push "orden-nueva"\n(WebSocket)
+        activate CocPage
+        CocPage -> CocPage: actualiza cola FIFO\nvisible al cocinero
+        Cook -> CocPage: visualiza nueva orden
+        CocPage --> Cook: muestra detalle
+        deactivate CocPage
+        Hub --> Svc: ok
+        deactivate Hub
+
+        Svc -> Bit: RegistrarEvento\n(OrdenEnviada, operador, ordenId)
+        activate Bit
+        Bit -> DB: INSERT Bitacora
+        DB --> Bit: ok
+        Bit --> Svc: ok
+        deactivate Bit
+
+        Svc --> Page: OrdenEnviada
+        Page --> Op: confirmacion\n"Orden enviada"
+    end
+end
+
+deactivate Svc
+deactivate Page
+
+@enduml
