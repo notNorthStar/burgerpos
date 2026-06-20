@@ -1,6 +1,8 @@
 # 🍔 BurgerPOS
 
-Punto de venta web para hamburgueserías pequeñas. Proyecto final de la materia **Procesos de Desarrollo de Software (PDS)**.
+**A Burger Store Designed Point Of Sale.**
+
+Proyecto final de la materia **Procesos de Desarrollo de Software (PDS)** de la Licenciatura en Ingeniería en Sistemas y Tecnologías de la Información, **Universidad Veracruzana**.
 
 > **Estado del proyecto**: en planificación y modelado. Avanzando entrega por entrega.
 
@@ -100,6 +102,10 @@ docker compose up -d
 
 ---
 
-## 👥 Equipo
+## 👥 Equipo de desarrollo
 
-Proyecto realizado en equipo para la materia de PDS.
+- Luis David Sosa Fernández
+- Natalia Guerrero Cabrera
+- Alfonso Vázquez
+
+El proyecto se desarrolla siguiendo el proceso completo de ingeniería de software: planificación, modelado de requisitos, diseño, implementación, pruebas y despliegue a producción, aplicando los conocimientos adquiridos en la materia.
