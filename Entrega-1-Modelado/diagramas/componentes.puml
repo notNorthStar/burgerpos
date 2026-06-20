@@ -1,0 +1,77 @@
+@startuml componentes
+' ======================================================================
+' BurgerPOS - Diagrama de Componentes (Entrega 1)
+' Vista de despliegue en tiempo de ejecucion sobre Docker Compose
+' ======================================================================
+
+title BurgerPOS - Diagrama de Componentes (runtime)
+
+skinparam shadowing false
+skinparam componentStyle uml2
+skinparam component {
+  BackgroundColor #F8F8F8
+  BorderColor #2E6FAC
+}
+skinparam database {
+  BackgroundColor #E8F4FD
+  BorderColor #2E6FAC
+}
+skinparam node {
+  BackgroundColor #FAFAFA
+  BorderColor #555
+}
+skinparam cloud {
+  BackgroundColor #FFFEF0
+  BorderColor #B8860B
+}
+
+node "Dispositivo del personal\n(tablet, PC, smartphone)" as Cliente {
+  component "Navegador Web" as Browser
+}
+
+node "Servidor Linux\n(Ubuntu 22.04 LTS o equivalente)" as Server {
+  node "Docker Engine 24+" as Docker {
+    component "Contenedor: burgerpos-app" as AppCont {
+      component "ASP.NET Core 10\nRuntime" as Runtime
+      component "BurgerPOS.Web\n(Razor Pages)" as WebComp
+      component "ASP.NET Core\nIdentity" as Identity
+      component "Entity Framework\nCore 10" as EF
+    }
+
+    database "Contenedor: burgerpos-db\nPostgreSQL 16" as DB {
+      component "Volumen\n/var/lib/postgresql/data" as Vol
+    }
+  }
+}
+
+' ============ Comunicacion ============
+Browser -down-> WebComp : HTTPS\npuerto 443\n(publicado al host)
+WebComp --> Identity : autentica\nusuario
+WebComp --> EF : consultas\ny comandos
+EF -right-> DB : TCP 5432\n(red interna Docker)
+Identity --> EF : repositorio\nde usuarios
+DB --> Vol : persiste\ndatos
+
+note right of AppCont
+  Imagen Docker construida
+  desde el Dockerfile de
+  BurgerPOS. Stateless:
+  puede reiniciarse sin
+  perdida.
+end note
+
+note right of DB
+  Imagen oficial postgres:16.
+  Datos en volumen persistente
+  para sobrevivir reinicios y
+  recreaciones del contenedor.
+end note
+
+note bottom of Docker
+  docker-compose.yml define
+  ambos contenedores con
+  health checks y red privada
+  exclusiva para ellos.
+end note
+
+@enduml

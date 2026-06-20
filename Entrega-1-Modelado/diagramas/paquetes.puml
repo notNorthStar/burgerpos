@@ -1,0 +1,100 @@
+@startuml paquetes
+' ======================================================================
+' BurgerPOS - Diagrama de Paquetes (Entrega 1)
+' Refleja la arquitectura por capas de la solucion .NET
+' ======================================================================
+
+title BurgerPOS - Diagrama de Paquetes
+
+skinparam packageStyle folder
+skinparam shadowing false
+skinparam package {
+  BackgroundColor #F8F8F8
+  BorderColor #555
+}
+skinparam ArrowColor #2E6FAC
+
+package "BurgerPOS.Web" as Web {
+  package "Pages" as WebPages
+  package "ViewModels" as WebVM
+  package "wwwroot\n(assets estaticos)" as WebRoot
+}
+note right of Web
+  Capa de presentacion.
+  Razor Pages + Identity UI.
+  Unico paquete con dependencia
+  hacia ASP.NET Core runtime.
+end note
+
+package "BurgerPOS.Application" as App {
+  package "Services" as AppSvc
+  package "DTOs" as AppDTO
+  package "Validators" as AppVal
+  package "Interfaces" as AppInt
+}
+note right of App
+  Capa de aplicacion.
+  Orquesta casos de uso.
+  No conoce a infraestructura
+  (depende de interfaces).
+end note
+
+package "BurgerPOS.Domain" as Dom {
+  package "Identidad" as DomId
+  package "Catalogo" as DomCat
+  package "Ordenes" as DomOrd
+  package "Cobro" as DomCobro
+  package "Turno" as DomTurno
+  package "Inventario" as DomInv
+  package "Administracion" as DomAdm
+}
+note right of Dom
+  Nucleo del negocio. Organizado por
+  contextos de dominio (DDD). Cada
+  contexto contiene sus entidades,
+  value objects, enums y reglas
+  invariantes. Es la misma division
+  usada por el diagrama de Clases
+  y el de Casos de Uso, lo que
+  permite trazabilidad directa
+  entre los tres diagramas.
+
+  Sin dependencias externas.
+end note
+
+package "BurgerPOS.Infrastructure" as Inf {
+  package "Persistence" as InfPer
+  package "Identity" as InfId
+  package "Reports" as InfRep
+  package "Logging" as InfLog
+}
+note right of Inf
+  Implementacion de
+  infraestructura: EF Core,
+  PostgreSQL, ASP.NET Identity,
+  bitacora, generacion de
+  tickets/reportes.
+end note
+
+package "BurgerPOS.Tests" as Tests {
+  package "Unit" as TestU
+  package "Integration" as TestI
+}
+note right of Tests
+  Proyecto xUnit
+  (Entrega 4).
+end note
+
+' ============ Dependencias entre paquetes ============
+Web ..> App : usa
+Web ..> Dom : referencia tipos
+App ..> Dom : opera sobre
+Inf ..> Dom : implementa\npersistencia\nde entidades
+Inf ..> App : implementa\ninterfaces
+Web ..> Inf : DI\n(composicion)
+
+Tests ..> Dom : prueba\nreglas
+Tests ..> App : prueba\nservicios
+Tests ..> Inf : prueba\nrepositorios
+
+@enduml
