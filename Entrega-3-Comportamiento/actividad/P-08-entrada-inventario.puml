@@ -1,0 +1,97 @@
+@startuml P-08-actividad-entrada-inventario
+' BurgerPOS - P-08 Registrar entrada de inventario (Actividad UML)
+' RF-07, CU-10
+
+title P-08 - Registrar entrada de inventario (Actividad UML)
+
+skinparam shadowing false
+skinparam activity {
+  BackgroundColor #F8F8F8
+  BorderColor #2E6FAC
+  DiamondBackgroundColor #FFFEF0
+  DiamondBorderColor #B8860B
+  ArrowColor #555
+}
+skinparam swimlane {
+  BorderColor #555
+  TitleBackgroundColor #E8F4FD
+  TitleFontStyle bold
+}
+
+|#FAFAFA|Cliente (Operador/Admin)|
+start
+:Recibir mercancia\ndel proveedor;
+:GET /Inventario/Entrada;
+
+|#E8F4FD|Capa Web (Razor Pages)|
+:EntradaInventarioPage\n.OnGetAsync();
+
+|#FFFEF0|Capa de Persistencia|
+:InsumoRepository\n.ListarActivos();
+:SELECT FROM Insumos\nWHERE Activo = true;
+
+|Capa Web (Razor Pages)|
+:Renderizar formulario\ncon dropdown de insumos;
+
+|Cliente (Operador/Admin)|
+:Seleccionar insumo;
+:Capturar cantidad;
+:(Opcional) capturar\nproveedor y costo;
+:POST "Confirmar";
+
+|Capa Web (Razor Pages)|
+:OnPostAsync(dto);
+:Validar antiforgery;
+
+|#FFFEE0|Capa de Aplicacion|
+:InventarioService\n.RegistrarEntrada(dto, userId);
+:ValidarDatos()\ncantidad > 0;
+
+if (Datos validos?) then (no)
+  |Capa Web (Razor Pages)|
+  :Devolver ModelState.Errors;
+  |Cliente (Operador/Admin)|
+  :Corregir;
+  stop
+else (si)
+endif
+
+|Capa de Persistencia|
+:InsumoRepository\n.BuscarPorId(insumoId)\nFOR UPDATE;
+:SELECT Insumo;
+
+|Capa de Aplicacion|
+:CalcularNuevoSaldo\n(saldoActual + cantidad);
+
+|Capa de Persistencia|
+:BEGIN TRANSACTION;
+
+fork
+  :InsumoRepository\n.ActualizarSaldo();
+  :UPDATE Insumos\nSET Saldo = @nuevo;
+fork again
+  :EntradaRepository\n.InsertarEntrada();
+  :INSERT EntradasInventario;
+fork again
+  :BitacoraService\n.Registrar(EntradaInventario);
+  :INSERT BitacoraEvento;
+end fork
+
+:COMMIT;
+
+|Capa de Aplicacion|
+:VerificarAlerta\n(saldo vs nivelAlerta);
+
+if (Saldo paso de bajo\na suficiente?) then (si)
+  :LimpiarAlertaUI();
+else (no)
+endif
+
+|Capa Web (Razor Pages)|
+:Devolver EntradaRegistrada\n+ nuevoSaldo;
+
+|Cliente (Operador/Admin)|
+:Confirmacion +\nnuevo saldo visible;
+stop
+
+@enduml

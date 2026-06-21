@@ -1,0 +1,111 @@
+@startuml P-02-actividad-gestionar-producto-menu
+' BurgerPOS - P-02 Gestionar producto del menu (Actividad UML)
+' RF-02, CU-02 (incluye CU-03)
+
+title P-02 - Gestionar producto del menu (Actividad UML)
+
+skinparam shadowing false
+skinparam activity {
+  BackgroundColor #F8F8F8
+  BorderColor #2E6FAC
+  DiamondBackgroundColor #FFFEF0
+  DiamondBorderColor #B8860B
+  ArrowColor #555
+}
+skinparam swimlane {
+  BorderColor #555
+  TitleBackgroundColor #E8F4FD
+  TitleFontStyle bold
+}
+skinparam noteBackgroundColor #FFFEE0
+skinparam noteBorderColor #B8860B
+
+|#FAFAFA|Cliente (Navegador)|
+start
+:GET /Menu/Productos;
+
+|#E8F4FD|Capa Web (Razor Pages)|
+:MenuProductoPage.OnGetAsync();
+
+|#FFFEF0|Capa de Persistencia|
+:ProductoRepository\n.ListarTodos();
+:SELECT FROM Productos\nINCLUDING Modificadores\nAND Receta;
+
+|Capa Web (Razor Pages)|
+:Renderizar listado;
+
+|Cliente (Navegador)|
+:Click "Nuevo"\no "Editar";
+
+if (Es edicion?) then (si)
+  |Capa de Persistencia|
+  :ProductoRepository\n.BuscarPorId(productoId);
+  :SELECT con includes;
+
+  |Capa Web (Razor Pages)|
+  :Cargar formulario\ncon datos existentes;
+else (nuevo)
+  |Capa Web (Razor Pages)|
+  :Mostrar formulario\nvacio;
+endif
+
+|Cliente (Navegador)|
+:Capturar nombre,\nprecio, categoria,\ndisponibilidad;
+:Agregar/editar\nmodificadores;
+:Definir receta\n(insumo + cantidad);
+:POST guardar;
+
+|Capa Web (Razor Pages)|
+:OnPostAsync(dto);
+:Validar antiforgery;
+
+|#FFFEE0|Capa de Aplicacion|
+:ProductoService\n.GuardarProducto(dto);
+:ValidarDatos(dto);
+
+if (Datos validos?) then (no)
+  |Capa Web (Razor Pages)|
+  :Renderizar formulario\ncon ModelState.Errors;
+
+  |Cliente (Navegador)|
+  :Mostrar errores;
+  stop
+else (si)
+endif
+
+|Capa de Persistencia|
+:InsumoRepository\n.ValidarExistencia(idsReceta);
+:SELECT FROM Insumos\nWHERE Id IN @ids;
+
+|Capa de Aplicacion|
+if (Todos los\ninsumos existen?) then (no)
+  |Capa Web (Razor Pages)|
+  :Mostrar error:\n"insumo no encontrado";
+
+  |Cliente (Navegador)|
+  :Ver lista de\nfaltantes;
+  stop
+else (si)
+endif
+
+fork
+  |Capa de Persistencia|
+  :ProductoRepository\n.GuardarConReceta();
+  :BEGIN TRANSACTION;
+  :INSERT/UPDATE Producto;
+  :INSERT/UPDATE Modificadores;
+  :INSERT/UPDATE Receta;
+  :COMMIT;
+fork again
+  :BitacoraService\n.Registrar(\nAltaProducto u\nEdicionProducto);
+  :INSERT BitacoraEvento;
+end fork
+
+|Capa Web (Razor Pages)|
+:Redirigir a listado;
+
+|Cliente (Navegador)|
+:Ver listado actualizado;
+stop
+
+@enduml

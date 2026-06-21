@@ -1,0 +1,130 @@
+@startuml P-01-actividad-autenticar-usuario
+' ======================================================================
+' BurgerPOS - P-01 Autenticar usuario y declarar rol del dia
+' Diagrama de Actividad UML
+'
+' Diferencia con el BPMN de la Entrega 2:
+' - Las particiones son por *capa de la arquitectura* (no por rol),
+'   reflejando el flujo a traves de las capas Web/Application/
+'   Persistence/Domain del diagrama de paquetes.
+' - Incluye fork/join para procesos paralelos (crear sesion +
+'   registrar bitacora).
+' - Incluye los nombres tecnicos de metodos invocados.
+'
+' RF asociado: RF-01    Caso de uso: CU-01
+' ======================================================================
+
+title P-01 - Autenticar usuario y declarar rol (Actividad UML)
+
+skinparam shadowing false
+skinparam activity {
+  BackgroundColor #F8F8F8
+  BorderColor #2E6FAC
+  DiamondBackgroundColor #FFFEF0
+  DiamondBorderColor #B8860B
+  ArrowColor #555
+}
+skinparam swimlane {
+  BorderColor #555
+  TitleBackgroundColor #E8F4FD
+  TitleFontStyle bold
+}
+skinparam noteBackgroundColor #FFFEE0
+skinparam noteBorderColor #B8860B
+
+|#FAFAFA|Cliente (Navegador)|
+start
+:GET /login;
+
+|#E8F4FD|Capa Web (Razor Pages)|
+:Renderizar LoginPage.cshtml;
+
+|Cliente (Navegador)|
+:Capturar usuario\ny contrasena;
+:POST /login con\nformulario;
+
+|Capa Web (Razor Pages)|
+:LoginPage.OnPostAsync(dto);
+:Validar antiforgery token;
+
+|#FFFEE0|Capa de Aplicacion|
+:AutenticacionService\n.AutenticarAsync(dto);
+
+|#FFFEF0|Capa de Persistencia|
+:UsuarioRepository\n.BuscarPorNombre(usuario);
+:SELECT * FROM Usuarios\nWHERE NombreUsuario = @u;
+:Devolver Usuario\no null;
+
+|Capa de Aplicacion|
+if (Usuario existe?) then (si)
+  :Verificar password\n(BCrypt.Verify);
+
+  if (Hash valido?) then (si)
+    if (Cuenta bloqueada?) then (no)
+
+      fork
+        :CrearSesionUsuario\nen BD;
+      fork again
+        :BitacoraService\n.Registrar(Login, usuario);
+      end fork
+
+      if (Rol del usuario?) then (Operador)
+        |Capa Web (Razor Pages)|
+        :Redirigir a\n/seleccion-rol;
+
+        |Cliente (Navegador)|
+        :Mostrar selector\nde rol del dia;
+        :POST rol seleccionado;
+
+        |Capa de Aplicacion|
+        :Asociar RolOperativo\na la sesion activa;
+      else (Administrador)
+        note left
+          Admin no declara
+          rol operativo
+        end note
+      endif
+
+      |Capa Web (Razor Pages)|
+      :Sign-in via Identity\n(emitir cookie);
+      :Redirigir a /Inicio;
+
+      |Cliente (Navegador)|
+      :Renderizar panel\ndel usuario;
+      stop
+
+    else (si, esta bloqueada)
+      |Capa de Aplicacion|
+      :Construir resultado\nCuentaBloqueada;
+
+      |Capa Web (Razor Pages)|
+      :Mostrar mensaje\nde bloqueo;
+      stop
+    endif
+
+  else (no, hash invalido)
+    :UsuarioRepository\n.IncrementarIntentosFallidos();
+    :BitacoraService\n.Registrar(LoginFallido);
+
+    if (Intentos en ultima\nhora >= 5?) then (si)
+      :BloquearCuenta\n(usuario, 5 min);
+
+      |Capa Web (Razor Pages)|
+      :Mostrar bloqueo;
+      stop
+    else (no)
+      |Capa Web (Razor Pages)|
+      :Mostrar mensaje\n"credenciales invalidas"\n(generico);
+      stop
+    endif
+  endif
+
+else (no existe)
+  :Tratar como\ncredenciales invalidas\n(no revelar si el\nusuario existe o no);
+
+  |Capa Web (Razor Pages)|
+  :Mostrar mensaje generico;
+  stop
+endif
+
+@enduml

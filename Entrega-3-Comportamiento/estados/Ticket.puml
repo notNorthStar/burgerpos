@@ -1,0 +1,70 @@
+@startuml estado-ticket
+' BurgerPOS - Maquina de estados de Ticket
+' Clase: Cobro.Ticket
+' Procesos: P-07    RF: RF-06
+
+title Maquina de estados - Ticket
+
+skinparam shadowing false
+skinparam linetype polyline
+skinparam roundCorner 0
+skinparam state {
+  BackgroundColor #F8F8F8
+  BorderColor #2E6FAC
+  ArrowColor #555
+  StartColor #2E6FAC
+  EndColor #B8860B
+  FontSize 11
+}
+skinparam noteBackgroundColor #FFFEE0
+skinparam noteBorderColor #B8860B
+
+[*] --> NoEmitido : - \n[venta recien\nconfirmada]
+
+state NoEmitido {
+  NoEmitido : Venta existe pero
+  NoEmitido : aun no se compuso
+  NoEmitido : el contenido del
+  NoEmitido : ticket.
+}
+NoEmitido --> EnVistaPrevia : componerContenido()\n[TicketService\nrecopila datos]
+
+state EnVistaPrevia {
+  EnVistaPrevia : Contenido compuesto
+  EnVistaPrevia : con datos historicos
+  EnVistaPrevia : del establecimiento
+  EnVistaPrevia : y precios al momento.
+}
+EnVistaPrevia --> Emitido : guardarSnapshot()\n[INSERT en BD\ncomo snapshot\ninmutable]
+
+state Emitido {
+  Emitido : Ticket persistido.
+  Emitido : Consultable y
+  Emitido : exportable como
+  Emitido : PDF o HTML.
+  Emitido : Estado terminal.
+}
+Emitido --> Emitido : visualizar()\n[admin u operador\nlo abre desde\nhistorial]
+Emitido --> Emitido : exportar(formato)\n[PdfRenderer o\nHTML; no cambia\nel ticket]
+Emitido --> [*] : -\n(persiste asociado\na la venta)
+
+note right of Emitido
+  BurgerPOS NO imprime fisicamente.
+  La visualizacion y exportacion
+  son las dos operaciones sobre
+  un ticket emitido. Si el cliente
+  requiere copia impresa, lo hace
+  fuera del sistema desde el PDF
+  o HTML descargado.
+end note
+
+note left of EnVistaPrevia
+  Snapshot inmutable: aunque
+  los datos del establecimiento
+  (RN-05) o los precios (RN-04)
+  cambien despues, el ticket
+  conserva exactamente como
+  fue emitido.
+end note
+
+@enduml

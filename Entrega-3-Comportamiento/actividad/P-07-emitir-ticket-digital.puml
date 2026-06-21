@@ -1,0 +1,84 @@
+@startuml P-07-actividad-emitir-ticket-digital
+' BurgerPOS - P-07 Generar y emitir ticket digital (Actividad UML)
+' RF-06, CU-08
+
+title P-07 - Generar y emitir ticket digital (Actividad UML)
+
+skinparam shadowing false
+skinparam activity {
+  BackgroundColor #F8F8F8
+  BorderColor #2E6FAC
+  DiamondBackgroundColor #FFFEF0
+  DiamondBorderColor #B8860B
+  ArrowColor #555
+}
+skinparam swimlane {
+  BorderColor #555
+  TitleBackgroundColor #E8F4FD
+  TitleFontStyle bold
+}
+skinparam noteBackgroundColor #FFFEE0
+skinparam noteBorderColor #B8860B
+
+|#FFFEE0|Capa de Aplicacion|
+start
+:CobroService invoca\nTicketService\n.GenerarTicketDigital(venta);
+
+|#FFFEF0|Capa de Persistencia|
+:VentaRepository\n.ObtenerVentaConDetalle();
+:SELECT Venta\nWITH Lineas, Pago,\nDescuentoAplicado;
+
+:EstablecimientoRepository\n.ObtenerDatosVigentes();
+:SELECT DatosEstablecimiento;
+
+|Capa de Aplicacion|
+:ComponerContenidoTicket()\nincluye:\n- Cabecera del negocio\n- Folio\n- Lineas con precios historicos\n- Modificadores y deltas\n- Subtotal, descuento, IVA,\n  propina, total\n- Metodo de pago\n- Operador;
+note right
+  RN-04 precios historicos
+  RN-05 datos historicos
+end note
+
+fork
+  |Capa de Persistencia|
+  :TicketRepository\n.GuardarSnapshot();
+  :INSERT Ticket\n(ContenidoSnapshot);
+fork again
+  |Capa de Aplicacion|
+  :BitacoraService\n.Registrar(\nTicketEmitido);
+end fork
+
+|#FAFAFA|Cliente operador|
+:GET /Ticket/{id};
+
+|#E8F4FD|Capa Web (Razor Pages)|
+:TicketPage.OnGetAsync();
+
+|Capa de Persistencia|
+:TicketRepository\n.ObtenerPorId();
+
+|Capa Web (Razor Pages)|
+:Renderizar ticket\nen vista previa;
+
+|Cliente operador|
+:Ver ticket en pantalla;
+
+if (Exportar?) then (si)
+  :Click "Exportar PDF"\no "HTML";
+
+  |Capa Web (Razor Pages)|
+  :Page.OnGetExportarAsync();
+
+  |Capa de Aplicacion|
+  :PdfRenderer\n.Renderizar(contenido);
+
+  |Capa Web (Razor Pages)|
+  :Stream archivo\nal navegador;
+
+  |Cliente operador|
+  :Descargar archivo;
+else (no)
+  :Cerrar vista;
+endif
+stop
+
+@enduml

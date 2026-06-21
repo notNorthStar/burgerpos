@@ -1,0 +1,77 @@
+@startuml estado-turno-de-caja
+' BurgerPOS - Maquina de estados de TurnoDeCaja
+' Clase: Turno.TurnoCaja
+' Procesos: P-09    RF: RF-09
+
+title Maquina de estados - TurnoDeCaja
+
+skinparam shadowing false
+skinparam linetype polyline
+skinparam roundCorner 0
+skinparam state {
+  BackgroundColor #F8F8F8
+  BorderColor #2E6FAC
+  ArrowColor #555
+  StartColor #2E6FAC
+  EndColor #B8860B
+  FontSize 11
+}
+skinparam noteBackgroundColor #FFFEE0
+skinparam noteBorderColor #B8860B
+
+[*] --> Abierto : abrir(fondoInicial,\noperador)\n[CU-14]
+
+state Abierto {
+  Abierto : Turno creado con
+  Abierto : fondo inicial.
+  Abierto : Aun sin ventas
+  Abierto : registradas.
+}
+Abierto --> EnOperacion : registrarPrimeraVenta()\n[automatico al\ncobrar primera\nventa del turno]
+
+state EnOperacion {
+  EnOperacion : Ventas en efectivo
+  EnOperacion : y tarjeta acumulan
+  EnOperacion : al turno. Retiros
+  EnOperacion : registrados aparte.
+}
+EnOperacion --> EnOperacion : registrarVenta()\n[P-06]
+EnOperacion --> EnOperacion : registrarRetiro(\nmonto, motivo)
+EnOperacion --> ArqueoEnProceso : iniciarCierre()\n[operador o admin\ninicia P-09]
+
+state ArqueoEnProceso {
+  ArqueoEnProceso : Sistema calculo
+  ArqueoEnProceso : esperado. Operador
+  ArqueoEnProceso : capturando contado
+  ArqueoEnProceso : y observaciones.
+}
+ArqueoEnProceso --> ArqueoEnProceso : capturarMotivo()\n[si |diferencia|\n> umbral]
+ArqueoEnProceso --> Cerrado : confirmarCierre()
+ArqueoEnProceso --> EnOperacion : cancelarCierre()\n[antes de confirmar]
+
+state Cerrado {
+  Cerrado : Turno cerrado con
+  Cerrado : arqueo completo:
+  Cerrado : esperado, contado,
+  Cerrado : diferencia y motivo.
+  Cerrado : Estado terminal.
+}
+Cerrado --> [*] : -\n(queda en historial,\nconsultable por admin)
+
+note right of ArqueoEnProceso
+  Si la diferencia absoluta entre
+  contado y esperado supera el
+  umbral configurable, se exige
+  motivo obligatorio antes de
+  permitir confirmar.
+end note
+
+note left of Abierto
+  Solo puede haber un turno
+  Abierto o EnOperacion a la vez
+  por instalacion. Las ventas se
+  asocian al turno activo durante
+  el cobro (P-06).
+end note
+
+@enduml

@@ -1,0 +1,83 @@
+@startuml estado-linea-de-orden
+' BurgerPOS - Maquina de estados de LineaDeOrden
+' Clase: Ordenes.LineaOrden
+' Procesos: P-03, P-04, P-05    RF: RF-03, RF-04
+
+title Maquina de estados - LineaDeOrden
+
+skinparam shadowing false
+skinparam linetype polyline
+skinparam roundCorner 0
+skinparam state {
+  BackgroundColor #F8F8F8
+  BorderColor #2E6FAC
+  ArrowColor #555
+  StartColor #2E6FAC
+  EndColor #B8860B
+  FontSize 11
+}
+skinparam noteBackgroundColor #FFFEE0
+skinparam noteBorderColor #B8860B
+
+[*] --> Solicitada : agregar(\nproducto, cantidad,\nmodificadores, nota)\n[P-03]
+
+state Solicitada {
+  Solicitada : Linea agregada
+  Solicitada : a la orden en
+  Solicitada : Borrador. Precio
+  Solicitada : calculado con
+  Solicitada : modificadores.
+}
+Solicitada --> Modificada : modificar()\n[operador edita\nantes de enviar]
+Solicitada --> Confirmada : confirmar()\n[orden enviada\na cocina, P-04]
+Solicitada --> [*] : eliminar()\n[operador la quita]
+
+state Modificada {
+  Modificada : Operador cambio
+  Modificada : cantidad, mods
+  Modificada : o nota. Subtotal
+  Modificada : recalculado.
+}
+Modificada --> Modificada : modificar()\n[edicion adicional]
+Modificada --> Confirmada : confirmar()\n[orden enviada\na cocina, P-04]
+Modificada --> [*] : eliminar()
+
+state Confirmada {
+  Confirmada : Linea congelada,
+  Confirmada : visible al cocinero.
+  Confirmada : Ya no se puede
+  Confirmada : editar libremente.
+}
+Confirmada --> Preparada : preparar()\n[cocinero marca\norden lista, P-05]
+
+state Preparada {
+  Preparada : Producto listo
+  Preparada : segun receta y
+  Preparada : modificadores.
+}
+Preparada --> Entregada : entregar()\n[mesero entrega\nfisicamente]
+
+state Entregada {
+  Entregada : Linea entregada
+  Entregada : al cliente. Lista
+  Entregada : para cobro junto
+  Entregada : con la orden.
+}
+Entregada --> [*] : -\n(parte de la\norden cobrada\nen P-06)
+
+note left of Solicitada
+  En la fase Borrador de la
+  Orden, las lineas se pueden
+  agregar, modificar y eliminar
+  libremente.
+end note
+
+note right of Confirmada
+  Despues del envio a cocina,
+  las lineas son inmutables.
+  Cualquier cambio requiere
+  cancelar la orden completa
+  (CU-16).
+end note
+
+@enduml
