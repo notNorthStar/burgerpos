@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="BurgerPOS.Application/BurgerPOS.Application.csproj" />
+  <Project Path="BurgerPOS.Domain/BurgerPOS.Domain.csproj" />
+  <Project Path="BurgerPOS.Infrastructure/BurgerPOS.Infrastructure.csproj" />
+  <Project Path="BurgerPOS.Tests/BurgerPOS.Tests.csproj" />
+  <Project Path="BurgerPOS.Web/BurgerPOS.Web.csproj" />
+</Solution>
