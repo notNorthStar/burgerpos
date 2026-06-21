@@ -1,0 +1,36 @@
+@page
+@model BurgerPOS.Web.Pages.Inventario.EntradaModel
+@{
+    ViewData["Title"] = "Registrar entrada";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-5">
+        <h4>Registrar entrada de insumo</h4>
+        <form method="post">
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+            <div class="mb-3">
+                <label asp-for="InsumoId" class="form-label">Insumo</label>
+                <select asp-for="InsumoId" asp-items="Model.InsumosSelect" class="form-select">
+                    <option value="">-- Selecciona --</option>
+                </select>
+                <span asp-validation-for="InsumoId" class="text-danger"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="Cantidad" class="form-label">Cantidad</label>
+                <input asp-for="Cantidad" type="number" step="0.01" class="form-control" />
+                <span asp-validation-for="Cantidad" class="text-danger"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="Proveedor" class="form-label">Proveedor (opcional)</label>
+                <input asp-for="Proveedor" class="form-control" />
+            </div>
+
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-dark">Registrar</button>
+                <a href="/Inventario" class="btn btn-outline-secondary">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>

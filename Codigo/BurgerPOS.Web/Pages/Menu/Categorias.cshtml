@@ -1,0 +1,52 @@
+@page
+@model BurgerPOS.Web.Pages.Menu.CategoriasModel
+@{
+    ViewData["Title"] = "Categorias";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h4>Categorias</h4>
+    <a href="/Menu" class="btn btn-outline-secondary btn-sm">Volver al menu</a>
+</div>
+
+<div class="row">
+    <div class="col-md-4">
+        <div class="card mb-4">
+            <div class="card-body">
+                <h6 class="card-title">Nueva categoria</h6>
+                <form method="post">
+                    <div asp-validation-summary="ModelOnly" class="text-danger mb-2"></div>
+                    <div class="mb-2">
+                        <input asp-for="Nombre" class="form-control" placeholder="Nombre" />
+                        <span asp-validation-for="Nombre" class="text-danger"></span>
+                    </div>
+                    <button type="submit" class="btn btn-dark btn-sm">Agregar</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-8">
+        @if (!Model.Categorias.Any())
+        {
+            <p class="text-muted">Sin categorias aun.</p>
+        }
+        else
+        {
+            <table class="table table-sm table-striped">
+                <thead class="table-dark">
+                    <tr><th>Nombre</th><th>Orden</th></tr>
+                </thead>
+                <tbody>
+                    @foreach (var c in Model.Categorias)
+                    {
+                        <tr>
+                            <td>@c.Nombre</td>
+                            <td>@c.OrdenVisual</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+    </div>
+</div>

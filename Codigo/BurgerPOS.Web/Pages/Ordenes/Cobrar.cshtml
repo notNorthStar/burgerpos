@@ -1,0 +1,61 @@
+@page
+@model BurgerPOS.Web.Pages.Ordenes.CobrarModel
+@{
+    ViewData["Title"] = "Cobrar orden";
+}
+
+@if (Model.Orden is null)
+{
+    <p class="text-danger">Orden no encontrada.</p>
+    <a href="/Ordenes" class="btn btn-outline-secondary btn-sm">Volver</a>
+}
+else
+{
+    <h4>Cobrar orden #@Model.Orden.FolioOrden</h4>
+
+    <div class="row">
+        <div class="col-md-5">
+            <table class="table table-sm mb-3">
+                <tbody>
+                    <tr><td>Subtotal</td><td class="text-end">$@Model.Orden.Subtotal.ToString("N2")</td></tr>
+                    <tr><td>IVA (16%)</td><td class="text-end">$@((Math.Round(Model.Orden.Subtotal * 0.16m, 2)).ToString("N2"))</td></tr>
+                    <tr class="fw-bold table-dark">
+                        <td>Total estimado</td>
+                        <td class="text-end">$@((Math.Round(Model.Orden.Subtotal * 1.16m, 2)).ToString("N2"))</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <form method="post">
+                <input type="hidden" name="OrdenId" value="@Model.Orden.Id" />
+
+                <div class="mb-3">
+                    <label class="form-label">Metodo de pago</label>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="MetodoPago" value="Efectivo" id="efectivo" checked />
+                        <label class="form-check-label" for="efectivo">Efectivo</label>
+                    </div>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="MetodoPago" value="Tarjeta" id="tarjeta" />
+                        <label class="form-check-label" for="tarjeta">Tarjeta</label>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Monto recibido (efectivo)</label>
+                    <input type="number" name="MontoRecibido" step="0.01" class="form-control" placeholder="0.00" />
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">Propina</label>
+                    <input type="number" name="Propina" step="0.01" value="0" class="form-control" />
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-success">Confirmar cobro</button>
+                    <a href="/Ordenes" class="btn btn-outline-secondary">Cancelar</a>
+                </div>
+            </form>
+        </div>
+    </div>
+}

@@ -1,0 +1,53 @@
+@page
+@model BurgerPOS.Web.Pages.Inventario.IndexModel
+@{
+    ViewData["Title"] = "Inventario";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h3>Inventario de insumos</h3>
+    <div class="d-flex gap-2">
+        <a href="/Inventario/Crear" class="btn btn-dark">+ Nuevo insumo</a>
+        <a href="/Inventario/Entrada" class="btn btn-outline-dark">+ Registrar entrada</a>
+    </div>
+</div>
+
+@if (!Model.Insumos.Any())
+{
+    <p class="text-muted">No hay insumos registrados.</p>
+}
+else
+{
+    <table class="table table-striped table-hover">
+        <thead class="table-dark">
+            <tr>
+                <th>Insumo</th>
+                <th>Unidad</th>
+                <th>Saldo actual</th>
+                <th>Nivel de alerta</th>
+                <th>Estado</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var i in Model.Insumos)
+            {
+                <tr>
+                    <td>@i.Nombre</td>
+                    <td>@i.Unidad</td>
+                    <td>@i.SaldoActual.ToString("N2")</td>
+                    <td>@i.NivelAlerta.ToString("N2")</td>
+                    <td>
+                        @if (i.SaldoActual <= i.NivelAlerta)
+                        {
+                            <span class="badge bg-danger">Stock bajo</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-success">OK</span>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}

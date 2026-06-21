@@ -1,0 +1,31 @@
+@page "{id:guid}"
+@model BurgerPOS.Web.Pages.Menu.EditarModel
+@{
+    ViewData["Title"] = "Editar producto";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <h4>Editar producto</h4>
+        <form method="post">
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+            <input type="hidden" asp-for="Id" />
+
+            <div class="mb-3">
+                <label asp-for="Nombre" class="form-label">Nombre</label>
+                <input asp-for="Nombre" class="form-control" />
+                <span asp-validation-for="Nombre" class="text-danger"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="PrecioBase" class="form-label">Precio base</label>
+                <input asp-for="PrecioBase" type="number" step="0.01" class="form-control" />
+                <span asp-validation-for="PrecioBase" class="text-danger"></span>
+            </div>
+
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-dark">Guardar</button>
+                <a href="/Menu" class="btn btn-outline-secondary">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>

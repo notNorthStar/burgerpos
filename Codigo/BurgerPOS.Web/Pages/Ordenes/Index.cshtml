@@ -1,0 +1,46 @@
+@page
+@model BurgerPOS.Web.Pages.Ordenes.IndexModel
+@{
+    ViewData["Title"] = "Ordenes";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h3>Ordenes activas</h3>
+    <a href="/Ordenes/Nueva" class="btn btn-dark">+ Nueva orden</a>
+</div>
+
+@if (!Model.Ordenes.Any())
+{
+    <p class="text-muted">No hay ordenes activas.</p>
+}
+else
+{
+    <table class="table table-striped table-hover">
+        <thead class="table-dark">
+            <tr>
+                <th>Folio</th>
+                <th>Modalidad</th>
+                <th>Estado</th>
+                <th>Subtotal</th>
+                <th>Fecha</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var o in Model.Ordenes)
+            {
+                <tr>
+                    <td>#@o.FolioOrden</td>
+                    <td>@o.Modalidad</td>
+                    <td><span class="badge bg-secondary">@o.Estado</span></td>
+                    <td>$@o.Subtotal.ToString("N2")</td>
+                    <td>@o.FechaCreacion.ToString("dd/MM/yyyy HH:mm")</td>
+                    <td>
+                        <a href="/Ordenes/Nueva?ordenId=@o.Id" class="btn btn-sm btn-outline-dark">Ver</a>
+                        <a href="/Ordenes/Cobrar?ordenId=@o.Id" class="btn btn-sm btn-success">Cobrar</a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}

@@ -1,0 +1,54 @@
+@page
+@model BurgerPOS.Web.Pages.Menu.IndexModel
+@{
+    ViewData["Title"] = "Menu";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h3>Menu</h3>
+    <a href="/Menu/Crear" class="btn btn-dark">+ Nuevo producto</a>
+</div>
+
+@if (!Model.Productos.Any())
+{
+    <p class="text-muted">No hay productos registrados.</p>
+}
+else
+{
+    <table class="table table-striped table-hover">
+        <thead class="table-dark">
+            <tr>
+                <th>Nombre</th>
+                <th>Descripcion</th>
+                <th>Categoria</th>
+                <th>Precio</th>
+                <th>Disponible</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var p in Model.Productos)
+            {
+                <tr>
+                    <td>@p.Nombre</td>
+                    <td>@p.Descripcion</td>
+                    <td>@(p.Categoria?.Nombre ?? "—")</td>
+                    <td>$@p.PrecioBase.ToString("N2")</td>
+                    <td>
+                        @if (p.Disponible)
+                        {
+                            <span class="badge bg-success">Si</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-secondary">No</span>
+                        }
+                    </td>
+                    <td>
+                        <a href="/Menu/Editar/@p.Id" class="btn btn-sm btn-outline-dark">Editar</a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
