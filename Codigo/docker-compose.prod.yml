@@ -1,0 +1,42 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: burgerpos_db
+    environment:
+      POSTGRES_DB: burgerpos_prod
+      POSTGRES_USER: burgerpos
+      POSTGRES_PASSWORD: Burgerpos_Prod_2026!
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - burgerpos_net
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U burgerpos -d burgerpos_prod"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: burgerpos_app
+    environment:
+      ConnectionStrings__DefaultConnection: "Host=db;Port=5432;Database=burgerpos_prod;Username=burgerpos;Password=Burgerpos_Prod_2026!"
+      ASPNETCORE_ENVIRONMENT: Production
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - burgerpos_net
+    restart: unless-stopped
+
+networks:
+  burgerpos_net:
+    driver: bridge
+
+volumes:
+  pgdata:
