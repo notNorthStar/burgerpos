@@ -15,8 +15,7 @@ RUN dotnet restore BurgerPOS.Web/BurgerPOS.Web.csproj
 COPY . .
 RUN dotnet publish BurgerPOS.Web/BurgerPOS.Web.csproj \
     -c Release \
-    -o /app/publish \
-    --no-restore
+    -o /app/publish
 
 # Stage 2: Runtime (imagen mas ligera, sin SDK)
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
