@@ -3,7 +3,7 @@ FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 
 # Copiar archivos de proyecto para aprovechar cache de capas
-COPY BurgerPOS.sln .
+COPY BurgerPOS.slnx .
 COPY BurgerPOS.Domain/BurgerPOS.Domain.csproj BurgerPOS.Domain/
 COPY BurgerPOS.Application/BurgerPOS.Application.csproj BurgerPOS.Application/
 COPY BurgerPOS.Infrastructure/BurgerPOS.Infrastructure.csproj BurgerPOS.Infrastructure/
