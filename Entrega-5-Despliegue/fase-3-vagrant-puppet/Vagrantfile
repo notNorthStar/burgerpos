@@ -6,13 +6,13 @@ Vagrant.configure("2") do |config|
   config.vm.box = "bento/ubuntu-24.04"
   config.vm.hostname = "burgerpos-server"
 
-  # Red: acceso desde host en http://localhost:8080
-  config.vm.network "forwarded_port", guest: 8080, host: 8080
+  # Red: acceso desde host en http://localhost:8081 (8080 lo usa la VM de fase 1/2)
+  config.vm.network "forwarded_port", guest: 8080, host: 8081
   # Red privada para acceso por IP directa (opcional)
-  config.vm.network "private_network", ip: "192.168.56.10"
+  config.vm.network "private_network", ip: "192.168.56.11"
 
   config.vm.provider "virtualbox" do |vb|
-    vb.name   = "BurgerPOS-Server"
+    vb.name   = "BurgerPOS-Vagrant"
     vb.memory = 2048
     vb.cpus   = 2
     vb.gui    = false
