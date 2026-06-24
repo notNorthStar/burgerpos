@@ -1,0 +1,45 @@
+@page
+@model BurgerPOS.Web.Pages.Admin.Empleados.CrearModel
+@{
+    ViewData["Title"] = "Nuevo empleado";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-5">
+        <h4>Nuevo empleado</h4>
+
+        @if (Model.Error is not null)
+        {
+            <div class="alert alert-danger">@Model.Error</div>
+        }
+
+        <form method="post">
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+            <div class="mb-3">
+                <label asp-for="NombreCompleto" class="form-label">Nombre completo</label>
+                <input asp-for="NombreCompleto" class="form-control" />
+                <span asp-validation-for="NombreCompleto" class="text-danger"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="Email" class="form-label">Correo electronico</label>
+                <input asp-for="Email" type="email" class="form-control" />
+                <span asp-validation-for="Email" class="text-danger"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="Password" class="form-label">Contrasena</label>
+                <input asp-for="Password" type="password" class="form-control" />
+                <span asp-validation-for="Password" class="text-danger"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="RolSeleccionado" class="form-label">Rol</label>
+                <select asp-for="RolSeleccionado" asp-items="Model.Roles" class="form-select"></select>
+            </div>
+
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-dark">Guardar</button>
+                <a href="/Admin/Empleados" class="btn btn-outline-secondary">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>

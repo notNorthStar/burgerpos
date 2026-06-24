@@ -1,0 +1,63 @@
+@page
+@model BurgerPOS.Web.Pages.Turno.IndexModel
+@{
+    ViewData["Title"] = "Turno de caja";
+}
+
+<h3 class="mb-3">Turno de caja</h3>
+
+@if (Model.Mensaje is not null)
+{
+    <div class="alert alert-info">@Model.Mensaje</div>
+}
+
+@if (Model.TurnoActual is null)
+{
+    <div class="card" style="max-width:400px">
+        <div class="card-body">
+            <h5 class="card-title">Abrir turno</h5>
+            <form method="post" asp-page-handler="Abrir">
+                <div class="mb-3">
+                    <label asp-for="FondoInicial" class="form-label">Fondo inicial ($)</label>
+                    <input asp-for="FondoInicial" type="number" step="0.01" class="form-control" />
+                </div>
+                <button type="submit" class="btn btn-dark">Abrir turno</button>
+            </form>
+        </div>
+    </div>
+}
+else
+{
+    <div class="card mb-4" style="max-width:500px">
+        <div class="card-body">
+            <h5 class="card-title">Turno en curso</h5>
+            <dl class="row mb-0">
+                <dt class="col-sm-5">Apertura</dt>
+                <dd class="col-sm-7">@Model.TurnoActual.FechaApertura.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</dd>
+                <dt class="col-sm-5">Fondo inicial</dt>
+                <dd class="col-sm-7">$@Model.TurnoActual.FondoInicial.ToString("N2")</dd>
+                <dt class="col-sm-5">Efectivo esperado</dt>
+                <dd class="col-sm-7">$@Model.TurnoActual.EfectivoEsperado.ToString("N2")</dd>
+                <dt class="col-sm-5">Estado</dt>
+                <dd class="col-sm-7"><span class="badge bg-success">@Model.TurnoActual.Estado</span></dd>
+            </dl>
+        </div>
+    </div>
+
+    <div class="card" style="max-width:400px">
+        <div class="card-body">
+            <h5 class="card-title">Cerrar turno (arqueo)</h5>
+            <form method="post" asp-page-handler="Arquear">
+                <input type="hidden" name="turnoId" value="@Model.TurnoActual.Id" />
+                <div class="mb-3">
+                    <label asp-for="EfectivoContado" class="form-label">Efectivo contado ($)</label>
+                    <input asp-for="EfectivoContado" type="number" step="0.01" class="form-control" />
+                </div>
+                <button type="submit" class="btn btn-warning"
+                        onclick="return confirm('Cerrar el turno actual?')">
+                    Cerrar turno
+                </button>
+            </form>
+        </div>
+    </div>
+}

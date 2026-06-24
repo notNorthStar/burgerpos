@@ -1,0 +1,41 @@
+@page
+@model BurgerPOS.Web.Pages.Admin.Empleados.IndexModel
+@{
+    ViewData["Title"] = "Empleados";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h3>Empleados</h3>
+    <a href="/Admin/Empleados/Crear" class="btn btn-dark">+ Nuevo empleado</a>
+</div>
+
+<table class="table table-striped table-hover">
+    <thead class="table-dark">
+        <tr>
+            <th>Nombre</th>
+            <th>Email</th>
+            <th>Rol</th>
+            <th>Estado</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var (user, roles) in Model.Empleados)
+        {
+            <tr>
+                <td>@user.NombreCompleto</td>
+                <td>@user.Email</td>
+                <td>@string.Join(", ", roles)</td>
+                <td>
+                    @if (user.Activo)
+                    {
+                        <span class="badge bg-success">Activo</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-secondary">Inactivo</span>
+                    }
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

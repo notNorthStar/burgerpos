@@ -1,0 +1,62 @@
+@page
+@model BurgerPOS.Web.Pages.Admin.Ventas.IndexModel
+@{
+    ViewData["Title"] = "Ventas";
+}
+
+<h3 class="mb-3">Historial de ventas</h3>
+
+@if (!Model.Ventas.Any())
+{
+    <p class="text-muted">No hay ventas registradas.</p>
+}
+else
+{
+    <table class="table table-striped table-hover">
+        <thead class="table-dark">
+            <tr>
+                <th>Folio</th>
+                <th>Fecha</th>
+                <th>Subtotal</th>
+                <th>IVA</th>
+                <th>Total</th>
+                <th>Estado</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var v in Model.Ventas)
+            {
+                <tr class="@(v.Anulada ? "table-secondary text-muted" : "")">
+                    <td>#@v.Folio</td>
+                    <td>@v.FechaCobro.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</td>
+                    <td>$@v.Subtotal.ToString("N2")</td>
+                    <td>$@v.Iva.ToString("N2")</td>
+                    <td>$@v.Total.ToString("N2")</td>
+                    <td>
+                        @if (v.Anulada)
+                        {
+                            <span class="badge bg-danger">Anulada</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-success">Cobrada</span>
+                        }
+                    </td>
+                    <td>
+                        @if (!v.Anulada)
+                        {
+                            <form method="post" asp-page-handler="Anular">
+                                <input type="hidden" name="ventaId" value="@v.Id" />
+                                <button type="submit" class="btn btn-sm btn-outline-danger"
+                                        onclick="return confirm('Anular venta #@v.Folio?')">
+                                    Anular
+                                </button>
+                            </form>
+                        }
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}

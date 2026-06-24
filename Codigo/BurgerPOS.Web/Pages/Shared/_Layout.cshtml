@@ -25,12 +25,30 @@
                                 <li><a class="dropdown-item" href="/Menu/Categorias">Categorias</a></li>
                             </ul>
                         </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="/Inventario">Inventario</a>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">Inventario</a>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item" href="/Inventario">Insumos</a></li>
+                                <li><a class="dropdown-item" href="/Inventario/Entrada">Registrar entrada</a></li>
+                                <li><a class="dropdown-item" href="/Inventario/Merma">Registrar merma</a></li>
+                            </ul>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" href="/Ordenes">Ordenes</a>
                         </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/Turno">Turno</a>
+                        </li>
+                        @if (User.IsInRole("Admin"))
+                        {
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">Admin</a>
+                                <ul class="dropdown-menu">
+                                    <li><a class="dropdown-item" href="/Admin/Empleados">Empleados</a></li>
+                                    <li><a class="dropdown-item" href="/Admin/Ventas">Ventas</a></li>
+                                </ul>
+                            </li>
+                        }
                     </ul>
                     <ul class="navbar-nav ms-auto">
                         <li class="nav-item">

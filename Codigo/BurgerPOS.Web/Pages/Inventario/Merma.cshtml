@@ -1,0 +1,43 @@
+@page
+@model BurgerPOS.Web.Pages.Inventario.MermaModel
+@{
+    ViewData["Title"] = "Registrar merma";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-5">
+        <h4>Registrar merma</h4>
+        <form method="post">
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+            <div class="mb-3">
+                <label class="form-label">Insumo</label>
+                <select asp-for="InsumoId" class="form-select">
+                    <option value="">-- Selecciona --</option>
+                    @foreach (var i in Model.Insumos)
+                    {
+                        <option value="@i.Id">@i.Nombre (stock: @i.SaldoActual.ToString("N2") @i.Unidad)</option>
+                    }
+                </select>
+            </div>
+            <div class="mb-3">
+                <label asp-for="Cantidad" class="form-label">Cantidad a descontar</label>
+                <input asp-for="Cantidad" type="number" step="0.01" class="form-control" />
+                <span asp-validation-for="Cantidad" class="text-danger"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="Motivo" class="form-label">Motivo</label>
+                <select asp-for="Motivo" asp-items="Model.MotivosSelect" class="form-select"></select>
+            </div>
+            <div class="mb-3">
+                <label asp-for="Descripcion" class="form-label">Descripcion (opcional)</label>
+                <input asp-for="Descripcion" class="form-control" />
+            </div>
+
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-warning">Registrar merma</button>
+                <a href="/Inventario" class="btn btn-outline-secondary">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
