@@ -20,7 +20,7 @@ Vagrant.configure("2") do |config|
 
   # Sincronizar el codigo fuente al VM
   # El Dockerfile y docker-compose.prod.yml quedan en /burgerpos
-  config.vm.synced_folder "../../Codigo", "/burgerpos"
+  config.vm.synced_folder "./Codigo", "/burgerpos"
 
   # Paso 1: instalar Puppet Agent (necesario antes del provisioner puppet)
   config.vm.provision "shell", name: "install-puppet", inline: <<-SHELL
