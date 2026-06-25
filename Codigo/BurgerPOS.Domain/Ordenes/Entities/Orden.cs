@@ -12,6 +12,7 @@ public class Orden
     public DateTime FechaCreacion { get; private set; }
     public Guid OperadorId { get; private set; }
     public decimal Subtotal { get; private set; }
+    public int TotalEnvios { get; private set; } = 0;
 
     public Mesa? Mesa { get; private set; }
     public ICollection<LineaOrden> Lineas { get; private set; } = new List<LineaOrden>();
@@ -41,6 +42,15 @@ public class Orden
     {
         if (Estado != EstadoOrden.Borrador)
             throw new InvalidOperationException("Solo se puede enviar a cocina una orden en borrador.");
+        TotalEnvios++;
+        Estado = EstadoOrden.EnviadaACocina;
+    }
+
+    public void ReenviarACocina()
+    {
+        if (Estado == EstadoOrden.Cobrada || Estado == EstadoOrden.Cancelada)
+            throw new InvalidOperationException("No se puede reenviar una orden cobrada o cancelada.");
+        TotalEnvios++;
         Estado = EstadoOrden.EnviadaACocina;
     }
 

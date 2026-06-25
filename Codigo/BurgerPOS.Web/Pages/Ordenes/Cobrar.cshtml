@@ -21,13 +21,27 @@ else
                     <tr><td>IVA (16%)</td><td class="text-end">$@((Math.Round(Model.Orden.Subtotal * 0.16m, 2)).ToString("N2"))</td></tr>
                     <tr class="fw-bold table-dark">
                         <td>Total estimado</td>
-                        <td class="text-end">$@((Math.Round(Model.Orden.Subtotal * 1.16m, 2)).ToString("N2"))</td>
+                        <td class="text-end" id="totalEstimado">$@((Math.Round(Model.Orden.Subtotal * 1.16m, 2)).ToString("N2"))</td>
                     </tr>
                 </tbody>
             </table>
 
             <form method="post">
                 <input type="hidden" name="OrdenId" value="@Model.Orden.Id" />
+
+                @if (Model.CampaniasVigentes.Any())
+                {
+                    <div class="mb-3">
+                        <label asp-for="CampaniaId" class="form-label">Descuento (opcional)</label>
+                        <select asp-for="CampaniaId" class="form-select">
+                            <option value="">Sin descuento</option>
+                            @foreach (var c in Model.CampaniasVigentes)
+                            {
+                                <option value="@c.Id">@c.Nombre (@(c.Tipo == BurgerPOS.Domain.Catalogo.Enums.TipoDescuento.Porcentaje ? $"{c.Valor}%" : $"${c.Valor:N2}"))</option>
+                            }
+                        </select>
+                    </div>
+                }
 
                 <div class="mb-3">
                     <label class="form-label">Metodo de pago</label>
@@ -41,9 +55,10 @@ else
                     </div>
                 </div>
 
-                <div class="mb-3">
-                    <label class="form-label">Monto recibido (efectivo)</label>
-                    <input type="number" name="MontoRecibido" step="0.01" class="form-control" placeholder="0.00" />
+                <div class="mb-3" id="campoMonto">
+                    <label class="form-label">Monto recibido</label>
+                    <input type="number" name="MontoRecibido" id="montoRecibido" step="0.01" class="form-control" placeholder="0.00" />
+                    <div class="mt-1 fw-bold text-success" id="cambioLabel" style="display:none">Cambio: $<span id="cambioVal">0.00</span></div>
                 </div>
 
                 <div class="mb-3">
@@ -58,4 +73,25 @@ else
             </form>
         </div>
     </div>
+
+    <script>
+        const total = @(Math.Round(Model.Orden.Subtotal * 1.16m, 2).ToString(System.Globalization.CultureInfo.InvariantCulture));
+        const montoInput = document.getElementById('montoRecibido');
+        const cambioLabel = document.getElementById('cambioLabel');
+        const cambioVal = document.getElementById('cambioVal');
+        const radios = document.querySelectorAll('input[name="MetodoPago"]');
+        const campoMonto = document.getElementById('campoMonto');
+
+        radios.forEach(r => r.addEventListener('change', () => {
+            campoMonto.style.display = r.value === 'Efectivo' && r.checked ? '' : 'none';
+            if (r.value === 'Tarjeta') cambioLabel.style.display = 'none';
+        }));
+
+        montoInput.addEventListener('input', () => {
+            const recibido = parseFloat(montoInput.value) || 0;
+            const cambio = recibido - total;
+            if (cambio >= 0) { cambioLabel.style.display = ''; cambioVal.textContent = cambio.toFixed(2); }
+            else { cambioLabel.style.display = 'none'; }
+        });
+    </script>
 }

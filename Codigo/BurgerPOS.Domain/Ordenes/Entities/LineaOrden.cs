@@ -9,6 +9,7 @@ public class LineaOrden
     public int Cantidad { get; private set; }
     public decimal PrecioUnitario { get; private set; }
     public string? NotaLibre { get; private set; }
+    public int NumeroEnvio { get; private set; } = 0;
 
     public ICollection<LineaModificador> Modificadores { get; private set; } = new List<LineaModificador>();
 
@@ -38,6 +39,11 @@ public class LineaOrden
             Cantidad = cantidad,
             PrecioUnitario = precioUnitario
         };
+    }
+
+    public void MarcarEnvio(int numeroEnvio)
+    {
+        if (NumeroEnvio == 0) NumeroEnvio = numeroEnvio;
     }
 
     public decimal CalcularImporte()

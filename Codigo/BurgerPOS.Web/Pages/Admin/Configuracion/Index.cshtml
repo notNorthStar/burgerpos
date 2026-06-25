@@ -1,0 +1,44 @@
+@page
+@model BurgerPOS.Web.Pages.Admin.Configuracion.IndexModel
+@{
+    ViewData["Title"] = "Configuracion del establecimiento";
+}
+
+<h3 class="mb-3">Datos del establecimiento</h3>
+
+@if (TempData["ok"] is string msg)
+{
+    <div class="alert alert-success">@msg</div>
+}
+
+<div class="card" style="max-width:500px">
+    <div class="card-body">
+        <form method="post">
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-2"></div>
+            <div class="mb-3">
+                <label asp-for="NombreComercial" class="form-label">Nombre comercial</label>
+                <input asp-for="NombreComercial" class="form-control" />
+                <span asp-validation-for="NombreComercial" class="text-danger"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="Direccion" class="form-label">Dirección</label>
+                <input asp-for="Direccion" class="form-control" />
+                <span asp-validation-for="Direccion" class="text-danger"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="Telefono" class="form-label">Teléfono</label>
+                <input asp-for="Telefono" class="form-control" />
+                <span asp-validation-for="Telefono" class="text-danger"></span>
+            </div>
+            <div class="mb-3">
+                <label asp-for="Rfc" class="form-label">RFC (opcional)</label>
+                <input asp-for="Rfc" class="form-control" />
+            </div>
+            <div class="mb-3">
+                <label asp-for="LeyendaTicket" class="form-label">Leyenda al pie del ticket (opcional)</label>
+                <textarea asp-for="LeyendaTicket" rows="2" class="form-control"></textarea>
+            </div>
+            <button type="submit" class="btn btn-dark">Guardar</button>
+        </form>
+    </div>
+</div>

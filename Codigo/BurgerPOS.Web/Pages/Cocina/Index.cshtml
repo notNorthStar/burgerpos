@@ -1,0 +1,77 @@
+@page
+@model BurgerPOS.Web.Pages.Cocina.IndexModel
+@using BurgerPOS.Domain.Ordenes.Enums
+@{
+    ViewData["Title"] = "Cocina";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h3>Vista de cocina</h3>
+    <a href="javascript:location.reload()" class="btn btn-outline-secondary btn-sm">Actualizar</a>
+</div>
+
+@if (!Model.Ordenes.Any())
+{
+    <div class="alert alert-success">Sin ordenes pendientes.</div>
+}
+else
+{
+    <div class="row g-3">
+        @foreach (var o in Model.Ordenes)
+        {
+            var enPrep = o.Estado == EstadoOrden.EnPreparacion;
+            <div class="col-md-4">
+                <div class="card @(enPrep ? "border-warning" : "border-secondary") h-100">
+                    <div class="card-header d-flex justify-content-between align-items-center @(enPrep ? "bg-warning" : "bg-secondary text-white")">
+                        <strong>Orden #@o.FolioOrden</strong>
+                        <span class="badge @(enPrep ? "bg-dark" : "bg-light text-dark")">@o.Estado</span>
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted small mb-2">
+                            @o.Modalidad @(o.Mesa is not null ? $"· Mesa {o.Mesa.Numero}" : "")
+                            · @o.FechaCreacion.ToLocalTime().ToString("HH:mm")
+                        </p>
+                        <ul class="list-unstyled mb-3">
+                            @foreach (var l in o.Lineas
+                                .Where(l => o.TotalEnvios == 0 || l.NumeroEnvio == o.TotalEnvios)
+                                .OrderBy(l => l.ProductoId.HasValue && Model.IdsComplemento.Contains(l.ProductoId.Value) ? 1 : 0))
+                            {
+                                var nombre = l.ProductoId.HasValue && Model.NombresProducto.TryGetValue(l.ProductoId.Value, out var n) ? n : "Combo";
+                                var esComplemento = l.ProductoId.HasValue && Model.IdsComplemento.Contains(l.ProductoId.Value);
+                                if (esComplemento)
+                                {
+                                    <li class="ms-3 text-muted small">
+                                        <span class="me-1">↳</span><strong>×@l.Cantidad</strong> @nombre
+                                    </li>
+                                }
+                                else
+                                {
+                                    <li>
+                                        <strong>×@l.Cantidad</strong> — @nombre
+                                        @if (!string.IsNullOrEmpty(l.NotaLibre))
+                                        {
+                                            <br /><small class="text-muted fst-italic ms-2">↳ @l.NotaLibre</small>
+                                        }
+                                    </li>
+                                }
+                            }
+                        </ul>
+                        <div class="d-flex gap-2">
+                            @if (!enPrep)
+                            {
+                                <form method="post" asp-page-handler="Iniciar">
+                                    <input type="hidden" name="ordenId" value="@o.Id" />
+                                    <button class="btn btn-sm btn-outline-warning">En prep.</button>
+                                </form>
+                            }
+                            <form method="post" asp-page-handler="Lista">
+                                <input type="hidden" name="ordenId" value="@o.Id" />
+                                <button class="btn btn-sm btn-success">✓ Lista</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}

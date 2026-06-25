@@ -23,6 +23,7 @@ public class CrearModel : PageModel
     public List<SelectListItem> Roles { get; set; } =
     [
         new("Cajero", "Cajero"),
+        new("Mesero", "Mesero"),
         new("Cocinero", "Cocinero"),
         new("Admin", "Admin"),
     ];

@@ -9,9 +9,27 @@
     <a href="/Menu/Crear" class="btn btn-dark">+ Nuevo producto</a>
 </div>
 
+<form method="get" class="row g-2 align-items-end mb-3">
+    <div class="col-auto">
+        <select name="categoriaId" class="form-select form-select-sm" onchange="this.form.submit()">
+            <option value="">Todas las categorias</option>
+            @foreach (var c in Model.Categorias)
+            {
+                <option value="@c.Value" selected="@(c.Value == Model.CategoriaId?.ToString())">@c.Text</option>
+            }
+        </select>
+    </div>
+    @if (Model.CategoriaId.HasValue)
+    {
+        <div class="col-auto">
+            <a href="/Menu" class="btn btn-outline-secondary btn-sm">Limpiar filtro</a>
+        </div>
+    }
+</form>
+
 @if (!Model.Productos.Any())
 {
-    <p class="text-muted">No hay productos registrados.</p>
+    <p class="text-muted">No hay productos en esta categoría.</p>
 }
 else
 {
@@ -46,6 +64,8 @@ else
                     </td>
                     <td>
                         <a href="/Menu/Editar/@p.Id" class="btn btn-sm btn-outline-dark">Editar</a>
+                        <a href="/Menu/Receta/@p.Id" class="btn btn-sm btn-outline-secondary ms-1">Receta</a>
+                        <a href="/Menu/Modificadores/@p.Id" class="btn btn-sm btn-outline-secondary ms-1">Modificadores</a>
                     </td>
                 </tr>
             }

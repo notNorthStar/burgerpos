@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="utf-8" />
@@ -31,10 +31,21 @@
                                 <li><a class="dropdown-item" href="/Inventario">Insumos</a></li>
                                 <li><a class="dropdown-item" href="/Inventario/Entrada">Registrar entrada</a></li>
                                 <li><a class="dropdown-item" href="/Inventario/Merma">Registrar merma</a></li>
+                                @if (User.IsInRole("Admin"))
+                                {
+                                    <li><hr class="dropdown-divider" /></li>
+                                    <li><a class="dropdown-item" href="/Inventario/Ajuste">Ajuste de saldo</a></li>
+                                }
                             </ul>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" href="/Ordenes">Ordenes</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/Cocina">Cocina</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/Meseros">Meseros</a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" href="/Turno">Turno</a>
@@ -46,6 +57,11 @@
                                 <ul class="dropdown-menu">
                                     <li><a class="dropdown-item" href="/Admin/Empleados">Empleados</a></li>
                                     <li><a class="dropdown-item" href="/Admin/Ventas">Ventas</a></li>
+                                    <li><hr class="dropdown-divider" /></li>
+                                    <li><a class="dropdown-item" href="/Admin/Campanias">Campañas</a></li>
+                                    <li><a class="dropdown-item" href="/Admin/Reportes">Reportes</a></li>
+                                    <li><a class="dropdown-item" href="/Admin/Bitacora">Bitácora</a></li>
+                                    <li><a class="dropdown-item" href="/Admin/Configuracion">Configuración</a></li>
                                 </ul>
                             </li>
                         }
@@ -56,6 +72,7 @@
                         </li>
                         <li class="nav-item">
                             <form method="post" action="/Auth/Logout">
+                                @Html.AntiForgeryToken()
                                 <button type="submit" class="btn btn-outline-light btn-sm">Cerrar sesion</button>
                             </form>
                         </li>

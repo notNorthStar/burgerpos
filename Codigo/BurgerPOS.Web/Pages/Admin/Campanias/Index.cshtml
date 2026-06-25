@@ -1,0 +1,65 @@
+@page
+@model BurgerPOS.Web.Pages.Admin.Campanias.IndexModel
+@using BurgerPOS.Domain.Catalogo.Enums
+@{
+    ViewData["Title"] = "Campañas de descuento";
+}
+
+<h3 class="mb-3">Campañas de descuento</h3>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <h6>Nueva campaña</h6>
+        <form method="post" asp-page-handler="Crear" class="row g-2 align-items-end">
+            <div asp-validation-summary="ModelOnly" class="text-danger col-12 mb-1"></div>
+            <div class="col-md-3"><input asp-for="Nombre" class="form-control form-control-sm" placeholder="Nombre" /></div>
+            <div class="col-md-2">
+                <select asp-for="Tipo" class="form-select form-select-sm">
+                    <option value="Porcentaje">Porcentaje %</option>
+                    <option value="MontoFijo">Monto fijo $</option>
+                </select>
+            </div>
+            <div class="col-md-1"><input asp-for="Valor" type="number" step="0.01" class="form-control form-control-sm" placeholder="Valor" /></div>
+            <div class="col-md-2">
+                <select asp-for="Alcance" class="form-select form-select-sm">
+                    <option value="TodaVenta">Toda la venta</option>
+                    <option value="Categoria">Por categoría</option>
+                    <option value="Producto">Por producto</option>
+                </select>
+            </div>
+            <div class="col-md-2"><input asp-for="FechaInicio" type="date" class="form-control form-control-sm" /></div>
+            <div class="col-md-2"><input asp-for="FechaFin" type="date" class="form-control form-control-sm" /></div>
+            <div class="col-md-1"><button type="submit" class="btn btn-dark btn-sm">Crear</button></div>
+        </form>
+    </div>
+</div>
+
+<table class="table table-sm table-striped">
+    <thead class="table-dark">
+        <tr><th>Nombre</th><th>Tipo</th><th>Valor</th><th>Alcance</th><th>Vigencia</th><th>Estado</th><th></th></tr>
+    </thead>
+    <tbody>
+        @foreach (var c in Model.Campanias)
+        {
+            var estadoClass = c.Estado.ToString() switch {
+                "Activa" => "bg-success",
+                "Pausada" => "bg-warning text-dark",
+                "Expirada" => "bg-secondary",
+                _ => "bg-light text-dark"
+            };
+            <tr>
+                <td>@c.Nombre</td>
+                <td>@c.Tipo</td>
+                <td>@(c.Tipo == TipoDescuento.Porcentaje ? $"{c.Valor}%" : $"${c.Valor:N2}")</td>
+                <td>@c.Alcance</td>
+                <td><small>@c.FechaInicio.ToLocalTime().ToString("dd/MM/yy") – @c.FechaFin.ToLocalTime().ToString("dd/MM/yy")</small></td>
+                <td><span class="badge @estadoClass">@c.Estado</span></td>
+                <td class="d-flex gap-1">
+                    <form method="post" asp-page-handler="Activar"><input type="hidden" name="id" value="@c.Id" /><button class="btn btn-sm btn-outline-success">Activar</button></form>
+                    <form method="post" asp-page-handler="Pausar"><input type="hidden" name="id" value="@c.Id" /><button class="btn btn-sm btn-outline-warning">Pausar</button></form>
+                    <form method="post" asp-page-handler="Expirar"><input type="hidden" name="id" value="@c.Id" /><button class="btn btn-sm btn-outline-secondary">Expirar</button></form>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

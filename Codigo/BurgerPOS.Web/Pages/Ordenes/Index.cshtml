@@ -20,6 +20,7 @@ else
             <tr>
                 <th>Folio</th>
                 <th>Modalidad</th>
+                <th>Mesa</th>
                 <th>Estado</th>
                 <th>Subtotal</th>
                 <th>Fecha</th>
@@ -32,12 +33,31 @@ else
                 <tr>
                     <td>#@o.FolioOrden</td>
                     <td>@o.Modalidad</td>
-                    <td><span class="badge bg-secondary">@o.Estado</span></td>
-                    <td>$@o.Subtotal.ToString("N2")</td>
-                    <td>@o.FechaCreacion.ToString("dd/MM/yyyy HH:mm")</td>
+                    <td>@(o.Mesa is not null ? $"Mesa {o.Mesa.Numero}" : "—")</td>
                     <td>
+                        @{
+                            var badgeClass = o.Estado.ToString() switch
+                            {
+                                "Borrador" => "bg-secondary",
+                                "EnviadaACocina" => "bg-primary",
+                                "EnPreparacion" => "bg-warning text-dark",
+                                "Lista" => "bg-success",
+                                "Entregada" => "bg-info text-dark",
+                                _ => "bg-secondary"
+                            };
+                        }
+                        <span class="badge @badgeClass">@o.Estado</span>
+                    </td>
+                    <td>$@o.Subtotal.ToString("N2")</td>
+                    <td>@o.FechaCreacion.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</td>
+                    <td class="d-flex gap-1">
                         <a href="/Ordenes/Nueva?ordenId=@o.Id" class="btn btn-sm btn-outline-dark">Ver</a>
                         <a href="/Ordenes/Cobrar?ordenId=@o.Id" class="btn btn-sm btn-success">Cobrar</a>
+                        <form method="post" asp-page-handler="Cancelar"
+                              onsubmit="return confirm('¿Cancelar la orden #@o.FolioOrden?')">
+                            <input type="hidden" name="ordenId" value="@o.Id" />
+                            <button type="submit" class="btn btn-sm btn-outline-danger">Cancelar</button>
+                        </form>
                     </td>
                 </tr>
             }

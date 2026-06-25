@@ -12,23 +12,53 @@
             <form method="post" asp-page-handler="Crear">
                 <div class="mb-3">
                     <label asp-for="Modalidad" class="form-label">Modalidad</label>
-                    <select asp-for="Modalidad" asp-items="Model.ModalidadesSelect" class="form-select"></select>
+                    <select asp-for="Modalidad" asp-items="Model.ModalidadesSelect" class="form-select" id="selectModalidad"></select>
+                </div>
+                <div class="mb-3" id="campoMesa" style="display:none">
+                    <label asp-for="MesaId" class="form-label">Mesa</label>
+                    <select asp-for="MesaId" asp-items="Model.MesasSelect" class="form-select">
+                        <option value="">-- Seleccionar mesa --</option>
+                    </select>
                 </div>
                 <button type="submit" class="btn btn-dark">Crear orden</button>
             </form>
         </div>
     </div>
+    <script>
+        const sel = document.getElementById('selectModalidad');
+        const campo = document.getElementById('campoMesa');
+        function toggle() { campo.style.display = sel.value === 'Mesa' ? '' : 'none'; }
+        sel.addEventListener('change', toggle);
+        toggle();
+    </script>
 }
 else
 {
     <div class="d-flex justify-content-between align-items-center mb-3">
-        <h4>Orden #@Model.Orden.FolioOrden — @Model.Orden.Modalidad</h4>
-        <a href="/Ordenes/Cobrar?ordenId=@Model.Orden.Id" class="btn btn-success">Cobrar</a>
+        <h4>Orden #@Model.Orden.FolioOrden — @Model.Orden.Modalidad@(Model.Orden.Mesa is not null ? $" · Mesa {Model.Orden.Mesa.Numero}" : "")</h4>
+        <div class="d-flex gap-2">
+            @{
+                var estadoFinal = Model.Orden.Estado == BurgerPOS.Domain.Ordenes.Enums.EstadoOrden.Cobrada
+                               || Model.Orden.Estado == BurgerPOS.Domain.Ordenes.Enums.EstadoOrden.Cancelada;
+            }
+            @if (!estadoFinal)
+            {
+                <form method="post" asp-page-handler="EnviarCocina">
+                    <input type="hidden" name="ordenId" value="@Model.Orden.Id" />
+                    <button type="submit" class="btn btn-warning btn-sm">Enviar a cocina</button>
+                </form>
+            }
+            else
+            {
+                <span class="badge bg-secondary align-self-center">@Model.Orden.Estado</span>
+            }
+            <a href="/Ordenes/Cobrar?ordenId=@Model.Orden.Id" class="btn btn-success btn-sm">Cobrar</a>
+        </div>
     </div>
 
     <table class="table table-sm mb-4">
         <thead class="table-dark">
-            <tr><th>Producto</th><th>Cant.</th><th>Precio</th><th>Importe</th></tr>
+            <tr><th>Producto</th><th>Cant.</th><th>Precio</th><th>Importe</th><th>Nota</th><th></th></tr>
         </thead>
         <tbody>
             @foreach (var l in Model.Lineas)
@@ -38,6 +68,14 @@ else
                     <td>@l.Cantidad</td>
                     <td>$@l.PrecioUnitario.ToString("N2")</td>
                     <td>$@((l.Cantidad * l.PrecioUnitario).ToString("N2"))</td>
+                    <td><small class="text-muted">@l.Nota</small></td>
+                    <td>
+                        <form method="post" asp-page-handler="EliminarLinea">
+                            <input type="hidden" name="ordenId" value="@Model.Orden.Id" />
+                            <input type="hidden" name="lineaId" value="@l.LineaId" />
+                            <button type="submit" class="btn btn-sm btn-outline-danger">×</button>
+                        </form>
+                    </td>
                 </tr>
             }
         </tbody>
@@ -45,24 +83,48 @@ else
             <tr class="fw-bold">
                 <td colspan="3">Subtotal</td>
                 <td>$@Model.Orden.Subtotal.ToString("N2")</td>
+                <td colspan="2"></td>
             </tr>
         </tfoot>
     </table>
 
     <h6>Agregar producto</h6>
-    <form method="post" asp-page-handler="AgregarLinea" class="row g-2">
+    <form method="post" asp-page-handler="AgregarLinea">
         <input type="hidden" name="OrdenId" value="@Model.Orden.Id" />
-        <div class="col-md-5">
-            <select name="ProductoId" asp-items="Model.ProductosSelect" class="form-select">
-                <option value="">-- Producto --</option>
-            </select>
+        <div class="row g-2 align-items-end mb-2">
+            <div class="col-md-4">
+                <select name="ProductoId" asp-items="Model.ProductosSelect" class="form-select">
+                    <option value="">-- Producto --</option>
+                </select>
+            </div>
+            <div class="col-md-1">
+                <input type="number" name="Cantidad" value="1" min="1" class="form-control" />
+            </div>
+            <div class="col-md-4">
+                <input type="text" name="NotaLibre" class="form-control" placeholder="Nota para cocina (sin cebolla…)" />
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-dark">Agregar</button>
+            </div>
         </div>
-        <div class="col-md-2">
-            <input type="number" name="Cantidad" value="1" min="1" class="form-control" />
-        </div>
-        <div class="col-md-2">
-            <button type="submit" class="btn btn-dark">Agregar</button>
-        </div>
+        @if (Model.Complementos.Any())
+        {
+            <div class="border rounded p-2 mb-2" style="max-width:600px">
+                <small class="text-muted fw-semibold d-block mb-1">Complementos</small>
+                <div class="d-flex flex-wrap gap-3">
+                    @foreach (var c in Model.Complementos)
+                    {
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox"
+                                   name="complementoIds" value="@c.Id" id="comp_@c.Id" />
+                            <label class="form-check-label" for="comp_@c.Id">
+                                @c.Nombre <small class="text-muted">+$@c.Precio.ToString("N2")</small>
+                            </label>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
     </form>
 
     <div class="mt-3">

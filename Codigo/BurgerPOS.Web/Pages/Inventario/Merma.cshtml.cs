@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using BurgerPOS.Application.Interfaces.Services;
+using BurgerPOS.Domain.Administracion.Enums;
 using BurgerPOS.Domain.Inventario.Entities;
 using BurgerPOS.Domain.Inventario.Enums;
 using Microsoft.AspNetCore.Authorization;
@@ -14,7 +15,12 @@ namespace BurgerPOS.Web.Pages.Inventario;
 public class MermaModel : PageModel
 {
     private readonly IInventarioService _inventario;
-    public MermaModel(IInventarioService inventario) => _inventario = inventario;
+    private readonly IBitacoraService _bitacora;
+    public MermaModel(IInventarioService inventario, IBitacoraService bitacora)
+    {
+        _inventario = inventario;
+        _bitacora = bitacora;
+    }
 
     [BindProperty] public Guid InsumoId { get; set; }
 
@@ -42,7 +48,9 @@ public class MermaModel : PageModel
             return Page();
         }
         var userId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
-        await _inventario.RegistrarMermaAsync(InsumoId, Cantidad, Motivo, userId, Descripcion);
+        var merma = await _inventario.RegistrarMermaAsync(InsumoId, Cantidad, Motivo, userId, Descripcion);
+        await _bitacora.RegistrarAsync(userId, TipoEvento.Merma, "Merma", merma.Id,
+            valorNuevo: $"{Cantidad} {Motivo}");
         return RedirectToPage("/Inventario/Index");
     }
 }

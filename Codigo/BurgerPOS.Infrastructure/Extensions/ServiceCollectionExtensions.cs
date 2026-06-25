@@ -32,9 +32,11 @@ public static class ServiceCollectionExtensions
 
     public static IServiceCollection AddApplicationServices(this IServiceCollection services)
     {
+        services.AddHttpContextAccessor();
         services.AddScoped<ICatalogoService, CatalogoService>();
         services.AddScoped<IInventarioService, InventarioService>();
         services.AddScoped<ICobroService, CobroService>();
+        services.AddScoped<IBitacoraService, BitacoraService>();
         return services;
     }
 }

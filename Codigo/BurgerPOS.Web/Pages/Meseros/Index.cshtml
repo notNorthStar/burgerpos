@@ -1,0 +1,51 @@
+@page
+@model BurgerPOS.Web.Pages.Meseros.IndexModel
+@{
+    ViewData["Title"] = "Ordenes listas";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h3>Ordenes listas para entregar</h3>
+    <a href="javascript:location.reload()" class="btn btn-outline-secondary btn-sm">Actualizar</a>
+</div>
+
+@if (!Model.Ordenes.Any())
+{
+    <div class="alert alert-info">No hay ordenes listas en este momento.</div>
+}
+else
+{
+    <div class="row g-3">
+        @foreach (var o in Model.Ordenes)
+        {
+            <div class="col-md-4">
+                <div class="card border-success h-100">
+                    <div class="card-header bg-success text-white d-flex justify-content-between">
+                        <strong>Orden #@o.FolioOrden</strong>
+                        @if (o.Mesa is not null)
+                        {
+                            <span class="badge bg-light text-dark">Mesa @o.Mesa.Numero</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-light text-dark">@o.Modalidad</span>
+                        }
+                    </div>
+                    <div class="card-body">
+                        <p class="text-muted small mb-2">Lista desde @o.FechaCreacion.ToLocalTime().ToString("HH:mm")</p>
+                        <ul class="list-unstyled mb-3">
+                            @foreach (var l in o.Lineas)
+                            {
+                                <li>×@l.Cantidad</li>
+                            }
+                        </ul>
+                        <form method="post" asp-page-handler="Entregar">
+                            <input type="hidden" name="ordenId" value="@o.Id" />
+                            <button class="btn btn-success w-100">Entregar al cliente</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}

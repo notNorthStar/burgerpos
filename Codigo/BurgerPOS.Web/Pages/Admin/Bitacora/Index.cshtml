@@ -1,0 +1,32 @@
+@page
+@model BurgerPOS.Web.Pages.Admin.Bitacora.IndexModel
+@{
+    ViewData["Title"] = "Bitácora";
+}
+
+<h3 class="mb-3">Bitácora de auditoría</h3>
+
+@if (!Model.Eventos.Any())
+{
+    <p class="text-muted">Sin eventos registrados.</p>
+}
+else
+{
+    <table class="table table-sm table-striped table-hover">
+        <thead class="table-dark">
+            <tr><th>Fecha/Hora</th><th>Evento</th><th>Entidad</th><th>Usuario</th><th>IP</th></tr>
+        </thead>
+        <tbody>
+            @foreach (var e in Model.Eventos)
+            {
+                <tr>
+                    <td><small>@e.Timestamp.ToLocalTime().ToString("dd/MM/yyyy HH:mm:ss")</small></td>
+                    <td><span class="badge bg-secondary">@e.Tipo</span></td>
+                    <td>@e.EntidadAfectada @(e.EntidadId.HasValue ? $"({e.EntidadId.Value.ToString()[..8]}…)" : "")</td>
+                    <td><small>@e.UsuarioId.ToString()[..8]…</small></td>
+                    <td><small>@e.IpOrigen</small></td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}

@@ -17,6 +17,8 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.ExpireTimeSpan = TimeSpan.FromHours(8);
 });
 
+builder.Services.AddDistributedMemoryCache();
+builder.Services.AddSession(o => { o.IdleTimeout = TimeSpan.FromHours(8); o.Cookie.HttpOnly = true; });
 builder.Services.AddRazorPages();
 
 var app = builder.Build();
@@ -29,7 +31,7 @@ using (var scope = app.Services.CreateScope())
     var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<IdentityRole<Guid>>>();
     var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
 
-    foreach (var role in new[] { "Admin", "Cajero", "Cocinero" })
+    foreach (var role in new[] { "Admin", "Cajero", "Cocinero", "Mesero" })
         if (!await roleManager.RoleExistsAsync(role))
             await roleManager.CreateAsync(new IdentityRole<Guid>(role));
 
@@ -45,6 +47,13 @@ using (var scope = app.Services.CreateScope())
         await userManager.CreateAsync(admin, "Admin123!");
         await userManager.AddToRoleAsync(admin, "Admin");
     }
+
+    if (!db.Mesas.Any())
+    {
+        for (int i = 1; i <= 10; i++)
+            db.Mesas.Add(BurgerPOS.Domain.Ordenes.Entities.Mesa.Crear(i));
+        await db.SaveChangesAsync();
+    }
 }
 
 if (!app.Environment.IsDevelopment())
@@ -57,6 +66,7 @@ app.UseHttpsRedirection();
 app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseSession();
 app.MapStaticAssets();
 app.MapRazorPages().WithStaticAssets();
 

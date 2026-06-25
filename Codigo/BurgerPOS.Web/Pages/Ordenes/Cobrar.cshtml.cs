@@ -1,4 +1,5 @@
 using BurgerPOS.Application.Interfaces.Services;
+using BurgerPOS.Domain.Catalogo.Entities;
 using BurgerPOS.Domain.Cobro.Enums;
 using BurgerPOS.Domain.Ordenes.Entities;
 using BurgerPOS.Domain.Turno.Enums;
@@ -16,21 +17,27 @@ namespace BurgerPOS.Web.Pages.Ordenes;
 public class CobrarModel : PageModel
 {
     private readonly ICobroService _cobro;
+    private readonly IBitacoraService _bitacora;
     private readonly BurgerPosDbContext _context;
     private readonly UserManager<ApplicationUser> _users;
 
-    public CobrarModel(ICobroService cobro, BurgerPosDbContext context, UserManager<ApplicationUser> users)
+    public CobrarModel(ICobroService cobro, IBitacoraService bitacora,
+        BurgerPosDbContext context, UserManager<ApplicationUser> users)
     {
         _cobro = cobro;
+        _bitacora = bitacora;
         _context = context;
         _users = users;
     }
 
     public Orden? Orden { get; set; }
+    public List<CampaniaDescuento> CampaniasVigentes { get; set; } = [];
+    [BindProperty] public Guid? CampaniaId { get; set; }
 
     public async Task OnGetAsync(Guid ordenId)
     {
         Orden = await _context.Ordenes.Include(o => o.Lineas).FirstOrDefaultAsync(o => o.Id == ordenId);
+        await CargarCampaniasAsync();
     }
 
     public async Task<IActionResult> OnPostAsync(Guid ordenId, string metodoPago, decimal montoRecibido, decimal propina)
@@ -56,8 +63,19 @@ public class CobrarModel : PageModel
         }
 
         var metodo = metodoPago == "Tarjeta" ? MetodoPago.Tarjeta : MetodoPago.Efectivo;
-        await _cobro.CobrarAsync(ordenId, userId, turnoId, metodo, propina, montoRecibido);
+        var venta = await _cobro.CobrarAsync(ordenId, userId, turnoId, metodo, propina, montoRecibido,
+            campaniaDescuentoId: CampaniaId);
 
-        return RedirectToPage("/Ordenes/Index");
+        await _bitacora.RegistrarAsync(userId, Domain.Administracion.Enums.TipoEvento.Venta,
+            "Venta", venta.Id, valorNuevo: $"${venta.Total:N2}");
+
+        return RedirectToPage("/Ventas/Ticket", new { ventaId = venta.Id });
+    }
+
+    private async Task CargarCampaniasAsync()
+    {
+        var ahora = DateTime.UtcNow;
+        var todas = await _context.CampaniasDescuento.ToListAsync();
+        CampaniasVigentes = todas.Where(c => c.EstaVigente(ahora)).ToList();
     }
 }

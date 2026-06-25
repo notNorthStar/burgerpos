@@ -1,0 +1,62 @@
+@page "{id:guid}"
+@model BurgerPOS.Web.Pages.Menu.RecetaModel
+@{
+    ViewData["Title"] = "Receta";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h4>Receta — @Model.Producto?.Nombre</h4>
+    <a href="/Menu" class="btn btn-outline-secondary btn-sm">Volver</a>
+</div>
+
+@if (Model.Receta?.Lineas.Any() == true)
+{
+    <table class="table table-sm table-striped mb-4" style="max-width:500px">
+        <thead class="table-dark">
+            <tr><th>Insumo</th><th>Cantidad</th><th></th></tr>
+        </thead>
+        <tbody>
+            @foreach (var l in Model.Receta.Lineas)
+            {
+                var insumo = Model.InsumosDisponibles.FirstOrDefault(i => i.Id == l.InsumoId);
+                <tr>
+                    <td>@(insumo?.Nombre ?? l.InsumoId.ToString())</td>
+                    <td>@l.Cantidad.ToString("N3") @insumo?.Unidad</td>
+                    <td>
+                        <form method="post" asp-page-handler="Eliminar" asp-route-id="@Model.Producto!.Id">
+                            <input type="hidden" name="insumoId" value="@l.InsumoId" />
+                            <button type="submit" class="btn btn-sm btn-outline-danger">Quitar</button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+else
+{
+    <p class="text-muted mb-4">Este producto no tiene receta asignada.</p>
+}
+
+<div class="card" style="max-width:400px">
+    <div class="card-body">
+        <h6 class="card-title">Agregar ingrediente</h6>
+        <form method="post" asp-page-handler="Agregar" asp-route-id="@Model.Producto!.Id">
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-2"></div>
+            <div class="mb-2">
+                <select asp-for="InsumoId" class="form-select form-select-sm">
+                    <option value="">-- Insumo --</option>
+                    @foreach (var i in Model.InsumosDisponibles)
+                    {
+                        <option value="@i.Id">@i.Nombre (@i.Unidad)</option>
+                    }
+                </select>
+            </div>
+            <div class="mb-2">
+                <input asp-for="Cantidad" type="number" step="0.001" placeholder="Cantidad" class="form-control form-control-sm" />
+                <span asp-validation-for="Cantidad" class="text-danger"></span>
+            </div>
+            <button type="submit" class="btn btn-dark btn-sm">Agregar</button>
+        </form>
+    </div>
+</div>

@@ -1,0 +1,29 @@
+@page
+@model BurgerPOS.Web.Pages.Auth.RolDiaModel
+@{
+    ViewData["Title"] = "Rol del dia";
+    Layout = "_Layout";
+}
+
+<div class="row justify-content-center mt-5">
+    <div class="col-md-4">
+        <div class="card shadow-sm">
+            <div class="card-body p-4">
+                <h5 class="card-title mb-4 text-center">¿Cuál es tu rol hoy?</h5>
+                <form method="post">
+                    <div class="mb-4">
+                        @foreach (var rol in Enum.GetValues<BurgerPOS.Domain.Identidad.Enums.RolOperativo>())
+                        {
+                            <div class="form-check form-check-lg mb-2">
+                                <input class="form-check-input" type="radio" asp-for="RolOperativo"
+                                       value="@rol" id="rol_@rol" />
+                                <label class="form-check-label fs-5" for="rol_@rol">@rol</label>
+                            </div>
+                        }
+                    </div>
+                    <button type="submit" class="btn btn-dark w-100">Confirmar</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

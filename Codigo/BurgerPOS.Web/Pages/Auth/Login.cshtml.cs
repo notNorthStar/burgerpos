@@ -11,8 +11,13 @@ namespace BurgerPOS.Web.Pages.Auth;
 public class LoginModel : PageModel
 {
     private readonly SignInManager<ApplicationUser> _signIn;
+    private readonly UserManager<ApplicationUser> _users;
 
-    public LoginModel(SignInManager<ApplicationUser> signIn) => _signIn = signIn;
+    public LoginModel(SignInManager<ApplicationUser> signIn, UserManager<ApplicationUser> users)
+    {
+        _signIn = signIn;
+        _users = users;
+    }
 
     [BindProperty, Required, EmailAddress]
     public string Email { get; set; } = string.Empty;
@@ -28,7 +33,12 @@ public class LoginModel : PageModel
 
         var result = await _signIn.PasswordSignInAsync(Email, Password, isPersistent: false, lockoutOnFailure: false);
         if (result.Succeeded)
-            return RedirectToPage("/Index");
+        {
+            var user = await _users.FindByEmailAsync(Email);
+            if (user is not null && await _users.IsInRoleAsync(user, "Admin"))
+                return RedirectToPage("/Index");
+            return RedirectToPage("/Auth/RolDia");
+        }
 
         ModelState.AddModelError(string.Empty, "Correo o contrasena incorrectos.");
         return Page();
